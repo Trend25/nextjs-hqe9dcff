@@ -319,7 +319,6 @@
   */
  export type {
    // Re-export commonly used types
-   UserType,
    StartupStage,
    UserProfile,
    StageDetectionInput,
