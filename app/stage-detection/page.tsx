@@ -1,47 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { 
+  StartupStage, 
+  StageDetectionInput, 
+  StageDetectionResult 
+} from '../../types';
 
-// Types directly in component for now
-export type StartupStage = 'PRE_SEED' | 'SEED' | 'SERIES_A' | 'GROWTH';
-
-export interface StageDetectionInput {
-  companyName: string;
-  foundedYear: number;
-  teamSize: number;
-  monthlyRevenue: number;
-  totalFunding: number;
-  burnRate: number;
-  runway: number;
-  hasLiveProduct: boolean;
-  activeCustomers: number;
-  marketSize: number;
-  monthlyGrowthRate: number;
-  customerAcquisitionCost: number;
-  lifetimeValue: number;
-  hasPaidCustomers: boolean;
-  hasRecurringRevenue: boolean;
-  isOperationallyProfitable: boolean;
-  hasScalableBusinessModel: boolean;
-}
-
-export interface StageDetectionResult {
-  detectedStage: StartupStage;
-  confidence: number;
-  stageScore: number;
-  reasons: string[];
-  recommendations: string[];
-  nextMilestones: string[];
-  benchmarkComparison: {
-    stage: StartupStage;
-    metric: string;
-    yourValue: number;
-    benchmark: number;
-    percentile: number;
-  }[];
-}
-
-// Helper functions
+// Helper functions (business logic)
 function calculatePreSeedScore(input: StageDetectionInput): number {
   let score = 0;
   score += Math.min(input.teamSize / 5, 1) * 35;
@@ -82,8 +48,8 @@ function calculateGrowthScore(input: StageDetectionInput): number {
   return Math.min(score, 100);
 }
 
-function getReasons(stage: StartupStage, input: StageDetectionInput): string[] {
-  const reasons: { [K in StartupStage]: string[] } = {
+function getReasons(stage: StartupStage): string[] {
+  const reasons: Record<StartupStage, string[]> = {
     PRE_SEED: ['Erken aşama ekip yapısı', 'MVP geliştirme aşamasında'],
     SEED: ['Ürün-pazar uyumu arayışında', 'İlk gelir akışları'],
     SERIES_A: ['Ölçeklenebilir iş modeli', 'Sürdürülebilir büyüme'],
@@ -92,8 +58,8 @@ function getReasons(stage: StartupStage, input: StageDetectionInput): string[] {
   return reasons[stage];
 }
 
-function getRecommendations(stage: StartupStage, input: StageDetectionInput): string[] {
-  const recommendations: { [K in StartupStage]: string[] } = {
+function getRecommendations(stage: StartupStage): string[] {
+  const recommendations: Record<StartupStage, string[]> = {
     PRE_SEED: ['Müşteri geliştirme odaklı çalışın', 'MVP geliştirin'],
     SEED: ['AARRR metriklerini takip edin', 'Unit economics optimize edin'],
     SERIES_A: ['Satış kanallarını ölçeklendirin', 'Süreçleri standartlaştırın'],
@@ -103,7 +69,7 @@ function getRecommendations(stage: StartupStage, input: StageDetectionInput): st
 }
 
 function getMilestones(stage: StartupStage): string[] {
-  const milestones: { [K in StartupStage]: string[] } = {
+  const milestones: Record<StartupStage, string[]> = {
     PRE_SEED: ['İlk 100 beta kullanıcı', 'PMF sinyalleri', 'Seed hazırlık'],
     SEED: ['Aylık €10K+ gelir', 'LTV/CAC 3:1', 'Series A hazırlık'],
     SERIES_A: ['Aylık €100K+ gelir', 'Ölçeklenebilir satış', 'Büyüme fonlaması'],
@@ -159,7 +125,6 @@ function getBenchmarks(stage: StartupStage, input: StageDetectionInput): StageDe
 
 // Main detection function
 function detectStartupStage(input: StageDetectionInput): StageDetectionResult {
-  // Basic scoring logic
   const scores = {
     PRE_SEED: calculatePreSeedScore(input),
     SEED: calculateSeedScore(input),
@@ -175,14 +140,14 @@ function detectStartupStage(input: StageDetectionInput): StageDetectionResult {
     detectedStage,
     confidence: Math.min(60 + scores[detectedStage], 95),
     stageScore: scores[detectedStage],
-    reasons: getReasons(detectedStage, input),
-    recommendations: getRecommendations(detectedStage, input),
+    reasons: getReasons(detectedStage),
+    recommendations: getRecommendations(detectedStage),
     nextMilestones: getMilestones(detectedStage),
     benchmarkComparison: getBenchmarks(detectedStage, input)
   };
 }
 
-// Main Component
+// Component
 const StageDetectionPage = () => {
   const [formData, setFormData] = useState<Partial<StageDetectionInput>>({
     companyName: '',
