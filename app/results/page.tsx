@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../components/ClientAuthProvider';
+import { ClientAuthProvider } from '../ClientAuthProvider';
 
 interface FormSubmission {
   id: string;
