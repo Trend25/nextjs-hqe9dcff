@@ -1,215 +1,290 @@
-'use client'
-
-export const dynamic = 'force-dynamic';
+'use client';
 
 import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../ClientAuthProvider'
-import { saveFormSubmission } from '../../lib/database'
+
+// Search params'i conditional olarak al
+function useClientSearchParams() {
+  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
+  
+  useEffect(() => {
+    // Sadece client-side'da çalışır
+    if (typeof window !== 'undefined') {
+      setSearchParams(new URLSearchParams(window.location.search));
+    }
+  }, []);
+  
+  return searchParams;
+}
 
 export default function FormPage() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const userType = searchParams.get('type') || 'entrepreneur'
+  const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useClientSearchParams(); // Custom hook kullan
   
   const [formData, setFormData] = useState({
     companyName: '',
-    industry: '',
+    email: '',
+    description: '',
     stage: '',
     teamSize: '',
-    revenue: ''
-  })
+    funding: '',
+    market: ''
+  });
   
-  const [saving, setSaving] = useState(false)
-  const [authChecked, setAuthChecked] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  // Search params yüklenene kadar bekle
+  const userType = searchParams?.get('type') || 'entrepreneur';
 
   useEffect(() => {
-    const authTimeout = setTimeout(() => {
-      setAuthChecked(true)
-      if (!loading && !user) {
-        router.push('/auth/login')
-      }
-    }, 1500)
-    return () => clearTimeout(authTimeout)
-  }, [user, loading, router])
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+  }, [user, router]);
 
-  if (loading || !authChecked) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Yükleniyor...</p>
-        </div>
-      </div>
-    )
-  }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-  if (!user && authChecked) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🔒</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Giriş Gerekli</h1>
-          <button
-            onClick={() => router.push('/auth/login')}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Giriş Yap
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const questions = {
-    entrepreneur: [
-      { key: 'companyName', label: 'Şirket Adı', type: 'text', required: true },
-      { key: 'industry', label: 'Sektör', type: 'select', options: ['Teknoloji', 'E-ticaret', 'Fintech', 'Sağlık', 'Eğitim'], required: true },
-      { key: 'stage', label: 'Şirket Aşaması', type: 'select', options: ['Fikir', 'Prototip', 'MVP', 'Büyüme', 'Olgunluk'], required: true },
-      { key: 'teamSize', label: 'Takım Büyüklüğü', type: 'select', options: ['1-5', '6-10', '11-25', '26-50', '50+'], required: true },
-      { key: 'revenue', label: 'Aylık Gelir (TL)', type: 'select', options: ['0', '1-10K', '10-50K', '50-100K', '100K+'], required: true }
-    ],
-    investor: [
-      { key: 'companyName', label: 'Yatırım Şirketi', type: 'text', required: true },
-      { key: 'industry', label: 'Odak Sektör', type: 'select', options: ['Teknoloji', 'E-ticaret', 'Fintech', 'Sağlık', 'Eğitim'], required: true },
-      { key: 'stage', label: 'Yatırım Deneyimi', type: 'select', options: ['Yeni başladım', '1-3 yıl', '3-5 yıl', '5-10 yıl', '10+ yıl'], required: true },
-      { key: 'teamSize', label: 'Portföy Büyüklüğü', type: 'select', options: ['1-5 şirket', '6-10 şirket', '11-25 şirket', '26-50 şirket', '50+ şirket'], required: true },
-      { key: 'revenue', label: 'Ortalama Yatırım Tutarı', type: 'select', options: ['10K-50K', '50K-100K', '100K-500K', '500K-1M', '1M+'], required: true }
-    ],
-    angel: [
-      { key: 'companyName', label: 'Ad Soyad', type: 'text', required: true },
-      { key: 'industry', label: 'Uzmanlık Alanı', type: 'select', options: ['Teknoloji', 'E-ticaret', 'Fintech', 'Sağlık', 'Eğitim'], required: true },
-      { key: 'stage', label: 'Melek Yatırım Deneyimi', type: 'select', options: ['İlk defa', '1-2 yatırım', '3-5 yatırım', '6-10 yatırım', '10+ yatırım'], required: true },
-      { key: 'teamSize', label: 'Mentorluk Kapasitesi', type: 'select', options: ['1-2 şirket', '3-5 şirket', '6-10 şirket', '10+ şirket'], required: true },
-      { key: 'revenue', label: 'Yatırım Bütçesi', type: 'select', options: ['5K-25K', '25K-50K', '50K-100K', '100K-250K', '250K+'], required: true }
-    ]
-  }
-
-  const currentQuestions = questions[userType as keyof typeof questions] || questions.entrepreneur
-
-  const handleInputChange = (key: string, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }))
-  }
-
-  const handleSubmit = async () => {
-    const requiredFields = currentQuestions.filter(q => q.required)
-    const missingFields = requiredFields.filter(q => !formData[q.key as keyof typeof formData])
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (missingFields.length > 0) {
-      alert('Lütfen tüm zorunlu alanları doldurun!')
-      return
+    if (!formData.companyName || !formData.email) {
+      setSubmitMessage('Lütfen zorunlu alanları doldurun');
+      return;
     }
 
-    setSaving(true)
+    setIsSubmitting(true);
+    setSubmitMessage('');
 
     try {
-      const userId = user?.id || 'user-' + Date.now()
-      const result = await saveFormSubmission(userId, userType, formData)
+      // Mock submission - gerçek uygulamada API'ye gönderilecek
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      if (result.error) {
-        alert('Form kaydedilirken hata oluştu: ' + result.error.message)
-      } else {
-        alert('Form başarıyla kaydedildi! 🎉')
-        router.push(`/results?type=${userType}&submissionId=${result.data[0]?.id || 'temp'}`)
-      }
+      // Başarılı submission
+      setSubmitMessage('Form başarıyla gönderildi! 🎉');
+      
+      // 2 saniye sonra results sayfasına yönlendir
+      setTimeout(() => {
+        router.push(`/results?type=${userType}`);
+      }, 2000);
+      
     } catch (error) {
-      alert('Beklenmeyen bir hata oluştu!')
+      console.error('Submission error:', error);
+      setSubmitMessage('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
-      setSaving(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const userTypeNames = {
-    entrepreneur: 'Girişimci',
-    investor: 'Yatırımcı', 
-    angel: 'Melek Yatırımcı'
+  const resetForm = () => {
+    setFormData({
+      companyName: '',
+      email: '',
+      description: '',
+      stage: '',
+      teamSize: '',
+      funding: '',
+      market: ''
+    });
+    setSubmitMessage('');
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Giriş kontrol ediliyor...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                📋 {userTypeNames[userType as keyof typeof userTypeNames]} Formu
-              </h1>
-              <p className="text-gray-600 mt-2">Değerlendirme için gerekli bilgileri girin</p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-3xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              📝 Startup Bilgi Formu
+            </h1>
+            <p className="text-lg text-gray-600">
+              {userType === 'entrepreneur' ? 'Girişimci' : 'Yatırımcı'} olarak bilgilerinizi paylaşın
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Temel Bilgiler */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Şirket/Proje Adı *
+                </label>
+                <input
+                  type="text"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Startup adınızı girin"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  E-posta Adresi *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="ornek@email.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mevcut Aşama
+                </label>
+                <select
+                  name="stage"
+                  value={formData.stage}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Seçiniz</option>
+                  <option value="idea">Fikir Aşaması</option>
+                  <option value="mvp">MVP Geliştirme</option>
+                  <option value="pre-seed">Pre-Seed</option>
+                  <option value="seed">Seed</option>
+                  <option value="series-a">Series A</option>
+                  <option value="growth">Büyüme</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ekip Büyüklüğü
+                </label>
+                <input
+                  type="number"
+                  name="teamSize"
+                  value={formData.teamSize}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Kaç kişi?"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hedef Fonlama (€)
+                </label>
+                <input
+                  type="number"
+                  name="funding"
+                  value={formData.funding}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="100000"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hedef Pazar
+                </label>
+                <input
+                  type="text"
+                  name="market"
+                  value={formData.market}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="B2B SaaS, E-ticaret, vb."
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                👋 <strong>{user?.email}</strong>
-              </span>
+
+            {/* Açıklama */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Proje Açıklaması
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Startup'ınız ne yapıyor? Hangi problemi çözüyor?"
+              />
+            </div>
+
+            {/* Submit Message */}
+            {submitMessage && (
+              <div className={`p-3 rounded-md text-sm ${
+                submitMessage.includes('başarıyla') 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {submitMessage}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-center space-x-4 pt-6">
               <button
-                onClick={async () => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.clear()
-                    sessionStorage.clear()
-                  }
-                  router.push('/')
-                  setTimeout(() => window.location.reload(), 100)
-                }}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium"
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Çıkış
+                {isSubmitting ? '📤 Gönderiliyor...' : '🚀 Formu Gönder'}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+              >
+                🔄 Temizle
+              </button>
+            </div>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => router.push('/')}
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                🏠 Ana Sayfa
+              </button>
+              <button
+                onClick={() => router.push('/stage-detection')}
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                🚀 Stage Analizi
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <div className="space-y-6">
-            {currentQuestions.map((question) => (
-              <div key={question.key}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {question.label} {question.required && <span className="text-red-500">*</span>}
-                </label>
-                
-                {question.type === 'text' ? (
-                  <input
-                    type="text"
-                    value={formData[question.key as keyof typeof formData]}
-                    onChange={(e) => handleInputChange(question.key, e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder={`${question.label} girin...`}
-                  />
-                ) : (
-                  <select
-                    value={formData[question.key as keyof typeof formData]}
-                    onChange={(e) => handleInputChange(question.key, e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">Seçiniz...</option>
-                    {question.options?.map(option => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8">
-            <button
-              onClick={handleSubmit}
-              disabled={saving}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
-            >
-              {saving ? (
-                <span className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Kaydediliyor...
-                </span>
-              ) : (
-                'Değerlendirmeyi Başlat 🚀'
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
-  )
+  );
 }
