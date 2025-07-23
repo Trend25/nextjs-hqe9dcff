@@ -98,4 +98,6 @@ export function useAuth() {
   return context;
 }
 
+// HEM default HEM named export - böylece her iki import tipi de çalışır
 export default ClientAuthProvider;
+export { ClientAuthProvider };
