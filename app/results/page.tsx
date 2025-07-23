@@ -1,8 +1,9 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ClientAuthProvider } from '../ClientAuthProvider';
+import { ClientAuthProvider, useAuth } from '../ClientAuthProvider'; 
 
 interface FormSubmission {
   id: string;
