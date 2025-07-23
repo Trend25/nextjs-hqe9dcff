@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../utils/supabase';
-import type { User } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js'; // 'type' kaldırdık
 
 interface AuthContextType {
   user: User | null;
@@ -14,19 +14,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function ClientAuthProvider({ children }: AuthProviderProps) {
+export function ClientAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,27 +37,19 @@ export function ClientAuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      return { data, error };
-    } catch (error) {
-      return { data: null, error };
-    }
+    const result = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return result;
   };
 
   const signUp = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      return { data, error };
-    } catch (error) {
-      return { data: null, error };
-    }
+    const result = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    return result;
   };
 
   const signOut = async () => {
@@ -81,7 +61,7 @@ export function ClientAuthProvider({ children }: AuthProviderProps) {
     loading,
     signIn,
     signUp,
-    signOut
+    signOut,
   };
 
   return (
@@ -89,4 +69,12 @@ export function ClientAuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
