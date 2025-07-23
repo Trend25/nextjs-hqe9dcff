@@ -1,8 +1,13 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '../utils/supabase';
-import { User } from '@supabase/supabase-js'; // 'type' kaldırdık
+import { createClient, User } from '@supabase/supabase-js';
+
+// Supabase client'ı doğrudan burada oluştur
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface AuthContextType {
   user: User | null;
