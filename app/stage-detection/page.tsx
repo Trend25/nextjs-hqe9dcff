@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { detectStartupStage } from '../../utils/stageDetection';
-import type { StageDetectionInput, StageDetectionResult } from '../../utils/stageDetection';
+import { 
+  StartupStage, 
+  StageDetectionInput, 
+  StageDetectionResult, 
+  detectStartupStage 
+} from '../../utils/stageDetection';
 
 const StageDetectionPage = () => {
   const [formData, setFormData] = useState<Partial<StageDetectionInput>>({
