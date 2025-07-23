@@ -3,9 +3,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { createClient, User } from '@supabase/supabase-js';
 
-// Supabase client'ı doğrudan burada oluştur
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Supabase config
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -42,23 +42,37 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const result = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return result;
+    try {
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return result;
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    const result = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    return result;
+    try {
+      const result = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      return result;
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   const value = {
