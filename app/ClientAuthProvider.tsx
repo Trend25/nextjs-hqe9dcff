@@ -19,7 +19,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function ClientAuthProvider({ children }: { children: ReactNode }) {
+function ClientAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -97,3 +97,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default ClientAuthProvider;
