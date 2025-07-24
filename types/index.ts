@@ -1,273 +1,330 @@
-// types/index.ts - Full Implementation Types
+'use client';
 
-// Authentication Types
-export interface User {
-  id: string;
-  email: string;
-  email_confirmed_at?: string;
-  created_at: string;
-}
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { User, Session } from '@supabase/supabase-js';
+import { AuthContextType, UserProfile } from '@/types';
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  full_name?: string;
-  company_name?: string;
-  role: 'entrepreneur' | 'investor' | 'advisor';
-  onboarding_completed: boolean;
-  created_at: string;
-  updated_at: string;
-}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export interface AuthContextType {
-  user: User | null;
-  userProfile: UserProfile | null;
-  loading: boolean;
-  signUp: (email: string, password: string, fullName?: string) => Promise<any>;
-  signIn: (email: string, password: string) => Promise<any>;
-  signOut: () => Promise<void>;
-  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
-  refreshProfile: () => Promise<void>;
-}
-
-// Startup Data Types
-export interface StartupSubmission {
-  id?: string;
-  user_id?: string;
-  
-  // Company Information
-  company_name: string;
-  founded_year?: number;
-  industry?: string;
-  description?: string;
-  
-  // Team Metrics
-  team_size?: number;
-  founders_count?: number;
-  key_hires?: number;
-  
-  // Financial Metrics
-  monthly_revenue?: number;
-  total_funding?: number;
-  burn_rate?: number;
-  runway?: number; // months
-  
-  // Product Metrics
-  has_live_product?: boolean;
-  active_customers?: number;
-  monthly_growth_rate?: number; // percentage
-  customer_acquisition_cost?: number;
-  lifetime_value?: number;
-  
-  // Business Model
-  has_paid_customers?: boolean;
-  has_recurring_revenue?: boolean;
-  is_operationally_profitable?: boolean;
-  has_scalable_business_model?: boolean;
-  
-  // Market
-  market_size?: number;
-  target_market?: string;
-  
-  // Status
-  is_draft?: boolean;
-  submitted_at?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// Analysis Types
-export type StartupStage = 'PRE_SEED' | 'SEED' | 'SERIES_A' | 'GROWTH';
-
-export interface StageAnalysisResult {
-  id?: string;
-  user_id?: string;
-  submission_id?: string;
-  
-  detected_stage: StartupStage;
-  confidence_score: number; // 0-100
-  stage_score: number; // 0-100
-  
-  reasons: string[];
-  recommendations: string[];
-  next_milestones: string[];
-  
-  benchmark_comparison: BenchmarkComparison[];
-  
-  // Score breakdown
-  pre_seed_score?: number;
-  seed_score?: number;
-  series_a_score?: number;
-  growth_score?: number;
-  
-  created_at?: string;
-}
-
-export interface BenchmarkComparison {
-  stage: StartupStage;
-  metric: string;
-  your_value: number;
-  benchmark: number;
-  percentile: number;
-  status: 'above' | 'below' | 'at' | 'excellent' | 'poor';
-}
-
-// User Activity Types
-export interface UserActivity {
-  id?: string;
-  user_id?: string;
-  activity_type: 'login' | 'submission' | 'analysis' | 'export' | 'profile_update';
-  activity_data?: any;
-  ip_address?: string;
-  user_agent?: string;
-  created_at?: string;
-}
-
-// Feedback Types
-export interface UserFeedback {
-  id?: string;
-  user_id?: string;
-  analysis_id?: string;
-  accuracy_rating?: number; // 1-10
-  usefulness_rating?: number; // 1-10
-  feedback_text?: string;
-  would_recommend?: boolean;
-  created_at?: string;
-}
-
-// Form Types
-export interface FormStepData {
-  step: number;
-  title: string;
-  fields: FormField[];
-  isCompleted: boolean;
-  validationRules?: ValidationRule[];
-}
-
-export interface FormField {
-  id: string;
-  type: 'text' | 'number' | 'email' | 'select' | 'checkbox' | 'textarea' | 'currency';
-  label: string;
-  placeholder?: string;
-  required?: boolean;
-  options?: SelectOption[];
-  min?: number;
-  max?: number;
-  step?: number;
-  helpText?: string;
-}
-
-export interface SelectOption {
-  value: string;
-  label: string;
-}
-
-export interface ValidationRule {
-  field: string;
-  rule: 'required' | 'min' | 'max' | 'email' | 'custom';
-  value?: any;
-  message: string;
-}
-
-// Dashboard Types
-export interface DashboardData {
-  user_profile: UserProfile;
-  recent_submissions: StartupSubmission[];
-  recent_analyses: StageAnalysisResult[];
-  stats: DashboardStats;
-  activity_timeline: UserActivity[];
-}
-
-export interface DashboardStats {
-  total_submissions: number;
-  total_analyses: number;
-  latest_stage?: StartupStage;
-  stage_progression?: StageProgression[];
-  avg_confidence_score?: number;
-}
-
-export interface StageProgression {
-  stage: StartupStage;
-  date: string;
-  confidence_score: number;
-}
-
-// API Response Types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface PaginatedResponse<T = any> {
-  data: T[];
-  count: number;
-  page: number;
-  per_page: number;
-  total_pages: number;
-}
-
-// UI State Types
-export interface LoadingState {
-  isLoading: boolean;
-  message?: string;
-}
-
-export interface ErrorState {
-  hasError: boolean;
-  message?: string;
-  code?: string;
-}
-
-export interface NotificationState {
-  type: 'success' | 'error' | 'warning' | 'info';
-  message: string;
-  duration?: number;
-}
-
-// Component Props Types
-export interface ProtectedRouteProps {
+interface AuthProviderProps {
   children: React.ReactNode;
-  requireProfile?: boolean;
-  redirectTo?: string;
 }
 
-export interface FormStepProps {
-  data: StartupSubmission;
-  onChange: (data: Partial<StartupSubmission>) => void;
-  onNext: () => void;
-  onPrevious: () => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
+export function ClientAuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const supabase = createClientComponentClient();
+
+  // Initialize auth state
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          setUser(session.user);
+          await fetchUserProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (session?.user) {
+          setUser(session.user);
+          await fetchUserProfile(session.user.id);
+        } else {
+          setUser(null);
+          setUserProfile(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  // Fetch user profile from database
+  const fetchUserProfile = async (userId: string): Promise<void> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Profile doesn't exist, create one
+          await createUserProfile(userId);
+          return;
+        }
+        throw error;
+      }
+
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setUserProfile(null);
+    }
+  };
+
+  // Create user profile
+  const createUserProfile = async (userId: string): Promise<void> => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      
+      if (!user) throw new Error('No user found');
+
+      const profileData: Partial<UserProfile> = {
+        id: userId,
+        email: user.email!,
+        full_name: user.user_metadata?.full_name || '',
+        role: 'entrepreneur', // default role
+        onboarding_completed: false,
+      };
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert([profileData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+    }
+  };
+
+  // Sign up function
+  const signUp = async (email: string, password: string, fullName?: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName || '',
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      // Log signup activity
+      if (data.user) {
+        await logUserActivity(data.user.id, 'signup', { email });
+      }
+
+      return { data, error: null };
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      return { data: null, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sign in function
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Log login activity
+      if (data.user) {
+        await logUserActivity(data.user.id, 'login', { email });
+      }
+
+      return { data, error: null };
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      return { data: null, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sign out function
+  const signOut = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      // Log logout activity before signing out
+      if (user) {
+        await logUserActivity(user.id, 'logout', {});
+      }
+
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      setUser(null);
+      setUserProfile(null);
+    } catch (error) {
+      console.error('Sign out error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update user profile
+  const updateProfile = async (data: Partial<UserProfile>): Promise<void> => {
+    if (!user || !userProfile) {
+      throw new Error('No user logged in');
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          ...data,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setUserProfile({
+        ...userProfile,
+        ...data,
+        updated_at: new Date().toISOString(),
+      });
+
+      // Log profile update activity
+      await logUserActivity(user.id, 'profile_update', data);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
+
+  // Refresh user profile
+  const refreshProfile = async (): Promise<void> => {
+    if (!user) return;
+    await fetchUserProfile(user.id);
+  };
+
+  // Log user activity
+  const logUserActivity = async (
+    userId: string, 
+    activityType: string, 
+    activityData: any
+  ): Promise<void> => {
+    try {
+      await supabase.from('user_activities').insert([{
+        user_id: userId,
+        activity_type: activityType,
+        activity_data: activityData,
+        ip_address: null, // Will be handled by database function if needed
+        user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : null,
+      }]);
+    } catch (error) {
+      // Don't throw - activity logging shouldn't break the app
+      console.error('Error logging user activity:', error);
+    }
+  };
+
+  const contextValue: AuthContextType = {
+    user,
+    userProfile,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    updateProfile,
+    refreshProfile,
+  };
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export interface AnalysisCardProps {
-  result: StageAnalysisResult;
-  submission: StartupSubmission;
-  onExport?: () => void;
-  onFeedback?: () => void;
-  showActions?: boolean;
+// Custom hook to use auth context
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within a ClientAuthProvider');
+  }
+  
+  return context;
 }
 
-// Export all commonly used types
-export type {
-  User,
-  UserProfile,
-  AuthContextType,
-  StartupSubmission,
-  StartupStage,
-  StageAnalysisResult,
-  BenchmarkComparison,
-  UserActivity,
-  UserFeedback,
-  FormStepData,
-  FormField,
-  DashboardData,
-  DashboardStats,
-  ApiResponse,
-  PaginatedResponse,
-  LoadingState,
-  ErrorState,
-  NotificationState
-};
+// HOC for protected routes
+export function withAuth<P extends object>(
+  Component: React.ComponentType<P>,
+  options: {
+    requireProfile?: boolean;
+    redirectTo?: string;
+  } = {}
+) {
+  return function AuthenticatedComponent(props: P) {
+    const { user, userProfile, loading } = useAuth();
+    const { requireProfile = false, redirectTo = '/auth' } = options;
+
+    useEffect(() => {
+      if (!loading) {
+        if (!user) {
+          window.location.href = redirectTo;
+          return;
+        }
+
+        if (requireProfile && (!userProfile || !userProfile.onboarding_completed)) {
+          window.location.href = '/onboarding';
+          return;
+        }
+      }
+    }, [user, userProfile, loading]);
+
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      );
+    }
+
+    if (!user) {
+      return null;
+    }
+
+    if (requireProfile && (!userProfile || !userProfile.onboarding_completed)) {
+      return null;
+    }
+
+    return <Component {...props} />;
+  };
+}
+
+export { AuthContext };
