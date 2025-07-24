@@ -239,7 +239,7 @@ export function ClientAuthProvider({ children }: AuthProviderProps) {
     activityData: any
   ): Promise<void> => {
     try {
-      await supabase.from('user_activities').insert([{
+      await supabase.from('user_activity_log').insert([{
         user_id: userId,
         activity_type: activityType,
         activity_data: activityData,
