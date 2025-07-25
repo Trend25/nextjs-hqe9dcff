@@ -78,7 +78,7 @@ export default function RegisterPage() {
         // Will redirect to email verification page or onboarding
       }
     } catch (error: any) {
-      setErrors({ general: error.message || 'An unexpected error occurred' });
+      setErrors({ general: error || 'An unexpected error occurred' });
     } finally {
       setIsSubmitting(false);
     }
