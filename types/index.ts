@@ -41,7 +41,7 @@ export interface StartupMetrics {
 }
 
 export interface StageAnalysis {
-  detected_stage:  StartupStage;
+  stage: StartupStage;
   confidence: number;
   metrics: StartupMetrics;
   recommendations: string[];
@@ -88,7 +88,7 @@ export interface StageAnalysisResult {
   id: string;
   user_id: string;
   detected_stage: StartupStage;
-  confidence: number;
+  confidence_score: number;
   metrics: StartupMetrics;
   recommendations: string[];
   benchmarks: {
