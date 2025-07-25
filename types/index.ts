@@ -42,7 +42,7 @@ export interface StartupMetrics {
 
 export interface StageAnalysis {
   stage: StartupStage;
-  confidence: number;
+  confidence_score: number;
   metrics: StartupMetrics;
   recommendations: string[];
   benchmarks: {
