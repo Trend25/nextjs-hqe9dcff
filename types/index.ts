@@ -6,11 +6,13 @@ export interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  isEmailVerified: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ data: any; error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ data: any; error: string | null }>;
   signOut: () => Promise<void>;
-  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<{ data: any; error: null; } | { data: null; error: any; }>;
   refreshProfile: () => Promise<void>;
+  logActivity: (activityType: string, activityData?: any) => Promise<void>;
 }
 
 // User Profile Type
