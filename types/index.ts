@@ -110,6 +110,7 @@ export interface StartupSubmission {
   industry: string;
   founded_year: number;
   team_size: number;
+  founders_count: number;
   metrics: StartupMetrics;
   analysis_result?: StageAnalysisResult;
   created_at: string;
