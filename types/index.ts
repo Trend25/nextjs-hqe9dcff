@@ -82,3 +82,43 @@ export interface UserActivityLog {
   user_agent?: string;
   created_at: string;
 }
+
+// Analysis & Dashboard Types
+export interface StageAnalysisResult {
+  id: string;
+  user_id: string;
+  stage: StartupStage;
+  confidence: number;
+  metrics: StartupMetrics;
+  recommendations: string[];
+  benchmarks: {
+    [key: string]: {
+      min: number;
+      max: number;
+      average: number;
+    };
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StartupSubmission {
+  id: string;
+  user_id: string;
+  company_name: string;
+  industry: string;
+  founded_year: number;
+  metrics: StartupMetrics;
+  analysis_result?: StageAnalysisResult;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenchmarkComparison {
+  metric: string;
+  userValue: number;
+  industryAverage: number;
+  stageAverage: number;
+  percentile: number;
+  status: 'above' | 'below' | 'average';
+}
