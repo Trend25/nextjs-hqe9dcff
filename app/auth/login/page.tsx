@@ -26,7 +26,7 @@ export default function LoginPage() {
         : await signIn(email, password);
 
       if (error) {
-        setError(error.message || 'Giriş hatası');
+        setError(error || 'Giriş hatası');
       } else if (data?.user) {
         router.push('/form?type=entrepreneur');
       }
