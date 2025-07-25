@@ -62,7 +62,7 @@ export interface StartupForm {
   metrics: StartupMetrics;
 }
 
-// API Response Types
+// API Response Typessd
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
