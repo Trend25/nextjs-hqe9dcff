@@ -92,7 +92,10 @@ export interface StageDetectionInput {
   monthlyRevenue: number;
   totalFunding: number;
   customerCount: number;
+  activeCustomers: number;
   growthRate: number;
+  hasLiveProduct: boolean;
+  marketSize: number;
 }
 
 export interface StageDetectionResult {
