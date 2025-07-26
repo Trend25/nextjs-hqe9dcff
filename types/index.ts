@@ -140,26 +140,44 @@ export interface StartupSubmission {
   updated_at: string;
 }
 
-// Stage Detection Input - Stage detection için (camelCase)
+// Stage Detection Input - KOMPLE FORM FIELD'LARI (camelCase)
 export interface StageDetectionInput {
   companyName: string;
-  industry: string;
+  industry?: string;
   foundedYear: number;
   teamSize: number;
   monthlyRevenue: number;
   totalFunding: number;
+  burnRate: number;                    
+  runway: number;                      
   customerCount: number;
   activeCustomers: number;
   growthRate: number;
   monthlyGrowthRate: number;
+  
+  // Boolean field'lar
   hasLiveProduct: boolean;
   hasPaidCustomers: boolean;
   hasRecurringRevenue: boolean;
   hasScalableBusinessModel: boolean;
   isOperationallyProfitable: boolean;
+  
+  // Gelişmiş metrikler
   lifetimeValue: number;
   customerAcquisitionCost: number;
   marketSize: number;
+  
+  // Muhtemel eksik field'lar (form'dan)
+  revenue?: number;
+  annualRevenue?: number;
+  monthlyUsers?: number;
+  productMarketFit?: boolean;
+  hasIntellectualProperty?: boolean;
+  competitiveAdvantage?: string;
+  fundingGoal?: number;
+  
+  // Opsiyonel field'lar
+  [key: string]: any;  // Flexibility için
 }
 
 // Stage Detection Result - Stage detection için (camelCase, son hatadan analiz)
