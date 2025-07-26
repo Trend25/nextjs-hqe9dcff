@@ -99,6 +99,9 @@ export interface StageDetectionInput {
   hasPaidCustomers: boolean;
   hasRecurringRevenue: boolean;
   hasScalableBusinessModel: boolean;
+  isOperationallyProfitable: boolean;
+  lifetimeValue: number;
+  customerAcquisitionCost: number;
   marketSize: number;
 }
 
