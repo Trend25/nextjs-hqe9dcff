@@ -135,8 +135,11 @@ export interface StartupSubmission {
 export interface BenchmarkComparison {
   metric: string;
   userValue: number;
+  your_value: number;
   industryAverage: number;
   stageAverage: number;
+  benchmark: number;
+  stage: string;
   percentile: number;
   status: 'above' | 'below' | 'average';
 }
