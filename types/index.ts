@@ -141,5 +141,5 @@ export interface BenchmarkComparison {
   benchmark: number;
   stage: string;
   percentile: number;
-  status: 'above' | 'below' | 'average';
+  status: 'above' | 'below' | 'average' | 'excellent';
 }
