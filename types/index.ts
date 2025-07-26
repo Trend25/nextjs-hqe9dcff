@@ -1,5 +1,10 @@
-// types/index.ts
+// types/index.ts - KOMPLE ÇÖZÜM
 import { User } from '@supabase/supabase-js';
+
+// NAMING CONVENTION: snake_case (database ile tutarlı)
+
+// Startup Stage Types - UPPERCASE (code'da kullanılan format)
+export type StartupStage = 'PRE_SEED' | 'SEED' | 'SERIES_A' | 'GROWTH';
 
 // Auth Context Type
 export interface AuthContextType {
@@ -26,9 +31,7 @@ export interface UserProfile {
   updated_at?: string;
 }
 
-// Startup Stage Types
-export type StartupStage = 'PRE_SEED' | 'SEED' | 'SERIES_A' | 'GROWTH';
-
+// Startup Metrics
 export interface StartupMetrics {
   revenue: number;
   teamSize: number;
@@ -40,6 +43,7 @@ export interface StartupMetrics {
   runway?: number;
 }
 
+// Stage Analysis
 export interface StageAnalysis {
   stage: StartupStage;
   confidence: number;
@@ -72,54 +76,21 @@ export interface ApiResponse<T> {
 
 export interface StageAnalysisResponse extends ApiResponse<StageAnalysis> {}
 
-// Database Types
-export interface UserActivityLog {
-  id: string;
-  user_id: string;
-  activity_type: string;
-  activity_data: any;
-  ip_address?: string;
-  user_agent?: string;
-  created_at: string;
+// Benchmark Comparison - SADECE KULLANILAN FIELD'LAR
+export interface BenchmarkComparison {
+  stage: string;
+  metric: string;
+  your_value: number;
+  benchmark: number;
+  percentile: number;
+  // Opsiyonel field'lar (başka yerlerde kullanılabilir)
+  userValue?: number;
+  industryAverage?: number;
+  stageAverage?: number;
+  status?: 'above' | 'below' | 'average' | 'excellent';
 }
 
-// Stage Detection Types
-export interface StageDetectionInput {
-  companyName: string;
-  industry: string;
-  foundedYear: number;
-  teamSize: number;
-  monthlyRevenue: number;
-  totalFunding: number;
-  customerCount: number;
-  activeCustomers: number;
-  growthRate: number;
-  monthlyGrowthRate: number;
-  hasLiveProduct: boolean;
-  hasPaidCustomers: boolean;
-  hasRecurringRevenue: boolean;
-  hasScalableBusinessModel: boolean;
-  isOperationallyProfitable: boolean;
-  lifetimeValue: number;
-  customerAcquisitionCost: number;
-  marketSize: number;
-}
-
-export interface StageDetectionResult {
-  detected_stage: StartupStage;
-  confidence_score: number;
-  stage_scores: {
-    PRE_SEED: number;
-    SEED: number;
-    SERIES_A: number;
-    GROWTH: number;
-  };
-  reasons: string[];
-  recommendations: string[];
-  benchmarkComparison: BenchmarkComparison[];
-}
-
-// Analysis & Dashboard Types
+// Stage Analysis Result - KOMPLE TÜM FIELD'LAR
 export interface StageAnalysisResult {
   id: string;
   user_id: string;
@@ -146,6 +117,7 @@ export interface StageAnalysisResult {
   updated_at: string;
 }
 
+// Startup Submission - TÜM FIELD'LAR EKLENDI
 export interface StartupSubmission {
   id: string;
   user_id: string;
@@ -168,14 +140,50 @@ export interface StartupSubmission {
   updated_at: string;
 }
 
-export interface BenchmarkComparison {
-  metric: string;
-  userValue: number;
-  your_value: number;
-  industryAverage: number;
-  stageAverage: number;
-  benchmark: number;
-  stage: string;
-  percentile: number;
-  status: 'above' | 'below' | 'average' | 'excellent';
+// Stage Detection Input - TÜM FIELD'LAR EKLENDI
+export interface StageDetectionInput {
+  companyName: string;
+  industry: string;
+  foundedYear: number;
+  teamSize: number;
+  monthlyRevenue: number;
+  totalFunding: number;
+  customerCount: number;
+  activeCustomers: number;
+  growthRate: number;
+  monthlyGrowthRate: number;
+  hasLiveProduct: boolean;
+  hasPaidCustomers: boolean;
+  hasRecurringRevenue: boolean;
+  hasScalableBusinessModel: boolean;
+  isOperationallyProfitable: boolean;
+  lifetimeValue: number;
+  customerAcquisitionCost: number;
+  marketSize: number;
+}
+
+// Stage Detection Result - TÜM FIELD'LAR + TUTARLI NAMING
+export interface StageDetectionResult {
+  detected_stage: StartupStage;
+  confidence_score: number;
+  stage_scores: {
+    PRE_SEED: number;    // UPPERCASE (enum ile tutarlı)
+    SEED: number;
+    SERIES_A: number;
+    GROWTH: number;
+  };
+  reasons: string[];
+  recommendations: string[];
+  benchmarkComparison: BenchmarkComparison[];
+}
+
+// Database Types
+export interface UserActivityLog {
+  id: string;
+  user_id: string;
+  activity_type: string;
+  activity_data: any;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
 }
