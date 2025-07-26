@@ -94,7 +94,10 @@ export interface StageDetectionInput {
   customerCount: number;
   activeCustomers: number;
   growthRate: number;
+  monthlyGrowthRate: number;
   hasLiveProduct: boolean;
+  hasPaidCustomers: boolean;
+  hasRecurringRevenue: boolean;
   marketSize: number;
 }
 
