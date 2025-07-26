@@ -162,18 +162,14 @@ export interface StageDetectionInput {
   marketSize: number;
 }
 
-// Stage Detection Result - TÜM FIELD'LAR + TUTARLI NAMING
+// Stage Detection Result - CAMELCASE (stage detection dosyası ile uyumlu)
 export interface StageDetectionResult {
-  detected_stage: StartupStage;
-  confidence_score: number;
-  stage_scores: {
-    PRE_SEED: number;    // UPPERCASE (enum ile tutarlı)
-    SEED: number;
-    SERIES_A: number;
-    GROWTH: number;
-  };
+  detectedStage: StartupStage;      // camelCase (code kullanıyor)
+  confidence: number;               // camelCase (code kullanıyor) 
+  stageScore: number;              // camelCase (code kullanıyor)
   reasons: string[];
   recommendations: string[];
+  nextMilestones: string[];        // camelCase (code kullanıyor)
   benchmarkComparison: BenchmarkComparison[];
 }
 
