@@ -175,7 +175,7 @@ const StageDetectionPage = () => {
   const handleInputChange = (field: keyof StageDetectionInput, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [field]: field.includes('has') || field.includes('is') ? Boolean(value) : value
+      [field]: (field as string).includes('has') || (field as string).includes('is') ? Boolean(value) : value
     }));
   };
 
