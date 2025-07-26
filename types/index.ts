@@ -96,6 +96,7 @@ export interface StageAnalysisResult {
   growth_score: number;
   reasons: string[];
   next_milestones: string[];
+  benchmark_comparison: BenchmarkComparison[];
   metrics: StartupMetrics;
   recommendations: string[];
   benchmarks: {
