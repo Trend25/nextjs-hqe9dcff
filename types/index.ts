@@ -1,12 +1,10 @@
-// types/index.ts - KOMPLE ÇÖZÜM
+// types/index.ts - BUILD HATALARINDAN ANALİZ EDİLMİŞ MÜKEMMEL VERSİYON
 import { User } from '@supabase/supabase-js';
 
-// NAMING CONVENTION: snake_case (database ile tutarlı)
-
-// Startup Stage Types - UPPERCASE (code'da kullanılan format)
+// Startup Stage Types - UPPERCASE (kodda kullanılan format)
 export type StartupStage = 'PRE_SEED' | 'SEED' | 'SERIES_A' | 'GROWTH';
 
-// Auth Context Type
+// Auth Context Type - İhtiyaç listesinden
 export interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
@@ -20,7 +18,7 @@ export interface AuthContextType {
   logActivity: (activityType: string, activityData?: any) => Promise<void>;
 }
 
-// User Profile Type
+// User Profile Type - Database ile uyumlu
 export interface UserProfile {
   id: string;
   email: string;
@@ -31,7 +29,7 @@ export interface UserProfile {
   updated_at?: string;
 }
 
-// Startup Metrics
+// Startup Metrics - Genel kullanım
 export interface StartupMetrics {
   revenue: number;
   teamSize: number;
@@ -43,7 +41,7 @@ export interface StartupMetrics {
   runway?: number;
 }
 
-// Stage Analysis
+// Stage Analysis - Genel
 export interface StageAnalysis {
   stage: StartupStage;
   confidence: number;
@@ -76,21 +74,23 @@ export interface ApiResponse<T> {
 
 export interface StageAnalysisResponse extends ApiResponse<StageAnalysis> {}
 
-// Benchmark Comparison - SADECE KULLANILAN FIELD'LAR
+// Benchmark Comparison - Her iki dosyayla uyumlu (flexible)
 export interface BenchmarkComparison {
-  stage: string;
+  // Stage detection için gerekli fields (camelCase/mixed)
+  stage?: string;
   metric: string;
-  your_value: number;
-  benchmark: number;
-  percentile: number;
-  // Opsiyonel field'lar (başka yerlerde kullanılabilir)
+  benchmark?: number;
+  percentile?: number;
+  
+  // Dashboard analyses için gerekli fields (snake_case)
+  your_value?: number;
   userValue?: number;
   industryAverage?: number;
   stageAverage?: number;
   status?: 'above' | 'below' | 'average' | 'excellent';
 }
 
-// Stage Analysis Result - KOMPLE TÜM FIELD'LAR
+// Stage Analysis Result - Dashboard analyses için (snake_case)
 export interface StageAnalysisResult {
   id: string;
   user_id: string;
@@ -117,7 +117,7 @@ export interface StageAnalysisResult {
   updated_at: string;
 }
 
-// Startup Submission - TÜM FIELD'LAR EKLENDI
+// Startup Submission - Dashboard analyses için (snake_case)
 export interface StartupSubmission {
   id: string;
   user_id: string;
@@ -140,7 +140,7 @@ export interface StartupSubmission {
   updated_at: string;
 }
 
-// Stage Detection Input - TÜM FIELD'LAR EKLENDI
+// Stage Detection Input - Stage detection için (camelCase)
 export interface StageDetectionInput {
   companyName: string;
   industry: string;
@@ -162,14 +162,14 @@ export interface StageDetectionInput {
   marketSize: number;
 }
 
-// Stage Detection Result - CAMELCASE (stage detection dosyası ile uyumlu)
+// Stage Detection Result - Stage detection için (camelCase, son hatadan analiz)
 export interface StageDetectionResult {
-  detectedStage: StartupStage;      // camelCase (code kullanıyor)
-  confidence: number;               // camelCase (code kullanıyor) 
-  stageScore: number;              // camelCase (code kullanıyor)
+  detectedStage: StartupStage;
+  confidence: number;
+  stageScore: number;
   reasons: string[];
   recommendations: string[];
-  nextMilestones: string[];        // camelCase (code kullanıyor)
+  nextMilestones: string[];
   benchmarkComparison: BenchmarkComparison[];
 }
 
