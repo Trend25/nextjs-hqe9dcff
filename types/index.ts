@@ -83,6 +83,31 @@ export interface UserActivityLog {
   created_at: string;
 }
 
+// Stage Detection Types
+export interface StageDetectionInput {
+  companyName: string;
+  industry: string;
+  foundedYear: number;
+  teamSize: number;
+  monthlyRevenue: number;
+  totalFunding: number;
+  customerCount: number;
+  growthRate: number;
+}
+
+export interface StageDetectionResult {
+  detected_stage: StartupStage;
+  confidence_score: number;
+  stage_scores: {
+    pre_seed: number;
+    seed: number;
+    series_a: number;
+    growth: number;
+  };
+  reasons: string[];
+  recommendations: string[];
+}
+
 // Analysis & Dashboard Types
 export interface StageAnalysisResult {
   id: string;
