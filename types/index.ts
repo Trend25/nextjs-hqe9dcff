@@ -140,44 +140,53 @@ export interface StartupSubmission {
   updated_at: string;
 }
 
-// Stage Detection Input - KOMPLE FORM FIELD'LARI (camelCase)
+// Stage Detection Input - TAMAMEN FLEXIBLE (form'a uygun)
 export interface StageDetectionInput {
+  // Zorunlu minimal field'lar
   companyName: string;
+  
+  // Tüm diğer field'lar opsiyonel
   industry?: string;
-  foundedYear: number;
-  teamSize: number;
-  monthlyRevenue: number;
-  totalFunding: number;
-  burnRate: number;                    
-  runway: number;                      
-  customerCount: number;
-  activeCustomers: number;
-  growthRate: number;
-  monthlyGrowthRate: number;
+  foundedYear?: number;
+  teamSize?: number;
+  monthlyRevenue?: number;
+  totalFunding?: number;
+  burnRate?: number;
+  runway?: number;
+  customerCount?: number;          // ← EKSİK OLANLAR
+  growthRate?: number;             // ← EKSİK OLANLAR
+  activeCustomers?: number;
+  monthlyGrowthRate?: number;
   
-  // Boolean field'lar
-  hasLiveProduct: boolean;
-  hasPaidCustomers: boolean;
-  hasRecurringRevenue: boolean;
-  hasScalableBusinessModel: boolean;
-  isOperationallyProfitable: boolean;
+  // Boolean field'lar (tümü opsiyonel)
+  hasLiveProduct?: boolean;
+  hasPaidCustomers?: boolean;
+  hasRecurringRevenue?: boolean;
+  hasScalableBusinessModel?: boolean;
+  isOperationallyProfitable?: boolean;
+  productMarketFit?: boolean;
+  hasIntellectualProperty?: boolean;
   
-  // Gelişmiş metrikler
-  lifetimeValue: number;
-  customerAcquisitionCost: number;
-  marketSize: number;
-  
-  // Muhtemel eksik field'lar (form'dan)
+  // Gelişmiş metrikler (tümü opsiyonel)
+  lifetimeValue?: number;
+  customerAcquisitionCost?: number;
+  marketSize?: number;
   revenue?: number;
   annualRevenue?: number;
   monthlyUsers?: number;
-  productMarketFit?: boolean;
-  hasIntellectualProperty?: boolean;
   competitiveAdvantage?: string;
   fundingGoal?: number;
   
-  // Opsiyonel field'lar
-  [key: string]: any;  // Flexibility için
+  // Form'da olabilecek tüm field'lar
+  description?: string;
+  website?: string;
+  location?: string;
+  employees?: number;
+  valuation?: number;
+  stage?: string;
+  
+  // Herhangi bir field için flexibility
+  [key: string]: any;
 }
 
 // Stage Detection Result - Stage detection için (camelCase, son hatadan analiz)
