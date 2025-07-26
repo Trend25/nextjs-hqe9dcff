@@ -102,7 +102,7 @@ function getBenchmarks(stage: StartupStage, input: StageDetectionInput): StageDe
     {
       stage,
       metric: 'Ekip Büyüklüğü',
-      yourValue: input.teamSize,
+      your_Value: input.teamSize,
       benchmark: benchmark.teamSize,
       percentile: calculatePercentile(input.teamSize, benchmark.teamSize)
     },
