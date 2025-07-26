@@ -109,14 +109,14 @@ function getBenchmarks(stage: StartupStage, input: StageDetectionInput): StageDe
     {
       stage,
       metric: 'Aktif Müşteri',
-      yourValue: input.activeCustomers,
+      your_Value: input.activeCustomers,
       benchmark: benchmark.activeCustomers,
       percentile: calculatePercentile(input.activeCustomers, benchmark.activeCustomers)
     },
     {
       stage,
       metric: 'Aylık Gelir (€)',
-      yourValue: input.monthlyRevenue,
+      your_Value: input.monthlyRevenue,
       benchmark: benchmark.monthlyRevenue,
       percentile: calculatePercentile(input.monthlyRevenue, benchmark.monthlyRevenue)
     }
@@ -575,7 +575,7 @@ const StageDetectionPage = () => {
                     {result.benchmarkComparison.map((comparison, index) => (
                       <tr key={index} className="border-b border-gray-100">
                         <td className="py-2 text-gray-700">{comparison.metric}</td>
-                        <td className="text-right py-2 font-medium">{comparison.yourValue.toLocaleString()}</td>
+                        <td className="text-right py-2 font-medium">{comparison.your_Value.toLocaleString()}</td>
                         <td className="text-right py-2 text-gray-500">{comparison.benchmark.toLocaleString()}</td>
                         <td className="text-right py-2">
                           <span className={`px-2 py-1 rounded text-xs ${
