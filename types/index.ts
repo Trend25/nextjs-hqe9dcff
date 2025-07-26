@@ -114,6 +114,7 @@ export interface StartupSubmission {
   monthly_revenue: number;
   total_funding: number;
   growth_rate: number;
+  monthly_growth_rate: number;
   customer_count: number;
   active_customers: number;
   burn_rate?: number;
