@@ -62,7 +62,7 @@ export interface StartupForm {
   metrics: StartupMetrics;
 }
 
-// API Response Typessd
+// API Response Types
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -111,6 +111,12 @@ export interface StartupSubmission {
   founded_year: number;
   team_size: number;
   founders_count: number;
+  monthly_revenue: number;
+  total_funding: number;
+  growth_rate: number;
+  customer_count: number;
+  burn_rate?: number;
+  runway_months?: number;
   metrics: StartupMetrics;
   analysis_result?: StageAnalysisResult;
   created_at: string;
