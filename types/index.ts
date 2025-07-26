@@ -27,7 +27,7 @@ export interface UserProfile {
 }
 
 // Startup Stage Types
-export type StartupStage = 'pre-seed' | 'seed' | 'series-a' | 'growth';
+export type StartupStage = 'PRE_SEED' | 'SEED' | 'SERIES_A' | 'GROWTH';
 
 export interface StartupMetrics {
   revenue: number;
