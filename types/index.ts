@@ -171,7 +171,7 @@ export interface StartupSubmission {
 export interface BenchmarkComparison {
   metric: string;
   userValue: number;
-  yourValue: number;
+  your_value: number;
   industryAverage: number;
   stageAverage: number;
   benchmark: number;
