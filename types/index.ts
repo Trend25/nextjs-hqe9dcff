@@ -115,6 +115,7 @@ export interface StartupSubmission {
   total_funding: number;
   growth_rate: number;
   customer_count: number;
+  active_customers: number;
   burn_rate?: number;
   runway_months?: number;
   metrics: StartupMetrics;
