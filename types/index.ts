@@ -95,6 +95,7 @@ export interface StageAnalysisResult {
   series_a_score: number;
   growth_score: number;
   reasons: string[];
+  next_milestones: string[];
   metrics: StartupMetrics;
   recommendations: string[];
   benchmarks: {
