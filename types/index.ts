@@ -109,13 +109,14 @@ export interface StageDetectionResult {
   detected_stage: StartupStage;
   confidence_score: number;
   stage_scores: {
-    pre_seed: number;
-    seed: number;
-    series_a: number;
-    growth: number;
+    PRE_SEED: number;
+    SEED: number;
+    SERIES_A: number;
+    GROWTH: number;
   };
   reasons: string[];
   recommendations: string[];
+  benchmarkComparison: BenchmarkComparison[];
 }
 
 // Analysis & Dashboard Types
