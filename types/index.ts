@@ -90,6 +90,10 @@ export interface StageAnalysisResult {
   detected_stage: StartupStage;
   confidence_score: number;
   stage_score: number;
+  pre_seed_score: number;
+  seed_score: number;
+  series_a_score: number;
+  growth_score: number;
   metrics: StartupMetrics;
   recommendations: string[];
   benchmarks: {
