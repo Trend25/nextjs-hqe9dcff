@@ -136,6 +136,7 @@ export interface StartupSubmission {
   runway_months?: number;
   metrics: StartupMetrics;
   analysis_result?: StageAnalysisResult;
+  is_draft: boolean;
   created_at: string;
   updated_at: string;
 }
