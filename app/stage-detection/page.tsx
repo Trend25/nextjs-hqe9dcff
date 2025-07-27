@@ -33,7 +33,7 @@ function calculatePreSeedScore(input: StageDetectionInput): number {
 function calculateSeedScore(input: StageDetectionInput): number {
   let score = 0;
   score += input.hasPaidCustomers ? 30 : 15;
-  score += input.monthlyRevenue > 1000 ? 25 : 10;
+  score += (input.monthlyRevenue || 0)> 1000 ? 25 : 10;
   score += input.hasRecurringRevenue ? 20 : 10;
   score += Math.min(input.monthlyGrowthRate / 20, 1) * 15;
   score += (input.activeCustomers || 0) > 100 ? 10 : 5;
@@ -42,7 +42,7 @@ function calculateSeedScore(input: StageDetectionInput): number {
 
 function calculateSeriesAScore(input: StageDetectionInput): number {
   let score = 0;
-  score += input.monthlyRevenue >= 50000 ? 35 : input.monthlyRevenue >= 20000 ? 20 : 0;
+  score += (input.monthlyRevenue || 0) >= 50000 ? 35 : (input.monthlyRevenue || 0) >= 20000 ? 20 : 0;
   score += input.hasScalableBusinessModel ? 25 : 10;
   score += input.marketSize >= 1000000 ? 20 : 10;
   score += input.monthlyGrowthRate >= 15 ? 10 : 5;
@@ -54,7 +54,7 @@ function calculateGrowthScore(input: StageDetectionInput): number {
   let score = 0;
   score += input.isOperationallyProfitable ? 40 : 10;
   score += (input.activeCustomers || 0) > 1000 ? 25 : 15;
-  score += input.monthlyRevenue >= 200000 ? 20 : 5;
+  score += (input.monthlyRevenue || 0) >= 200000 ? 20 : 5;
   score += (input.lifetimeValue > 0 && input.customerAcquisitionCost > 0 && 
            (input.lifetimeValue / input.customerAcquisitionCost) >= 5) ? 15 : 5;
   return Math.min(score, 100);
@@ -128,9 +128,9 @@ function getBenchmarks(stage: StartupStage, input: StageDetectionInput): StageDe
     {
       stage,
       metric: 'Aylık Gelir (€)',
-      your_value: input.monthlyRevenue,
+      your_value: (input.monthlyRevenue || 0),
       benchmark: benchmark.monthlyRevenue,
-      percentile: calculatePercentile(input.monthlyRevenue, benchmark.monthlyRevenue)
+      percentile: calculatePercentile((input.monthlyRevenue || 0), benchmark.monthlyRevenue)
     }
   ];
 }
