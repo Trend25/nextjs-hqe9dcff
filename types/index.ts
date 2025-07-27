@@ -140,6 +140,8 @@ export interface StartupSubmission {
   active_customers: number;
   
   // Form'da kullanılan diğer olası field'lar
+   customer_acquisition_cost?: number;  // ← BU EKSİK - EKLEYİN!
+  lifetime_value?: number;             // ← BU EKSİK - EKLEYİN!
   has_live_product?: boolean;
   has_paid_customers?: boolean;
   has_recurring_revenue?: boolean;
