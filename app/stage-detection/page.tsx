@@ -377,8 +377,6 @@ export interface StageDetectionInput {
   competitiveAdvantage?: string;
   stage?: string;
   
-  // FLEXIBLE CATCH-ALL (asla field eksik hatası vermez)
-  [key: string]: any;
   });
 
   const [result, setResult] = useState<StageDetectionResult | null>(null);
