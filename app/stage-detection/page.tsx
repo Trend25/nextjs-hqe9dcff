@@ -31,13 +31,39 @@ function calculatePreSeedScore(input: StageDetectionInput): number {
 }
 
 function calculateSeedScore(input: StageDetectionInput): number {
+  // Create safe input with all defaults
+  const safe: Required<StageDetectionInput> = {
+    companyName: input.companyName || '',
+    industry: input.industry || '',
+    foundedYear: input.foundedYear || new Date().getFullYear(),
+    teamSize: input.teamSize || 0,
+    monthlyRevenue: input.monthlyRevenue || 0,
+    totalFunding: input.totalFunding || 0,
+    burnRate: input.burnRate || 0,
+    runway: input.runway || 0,
+    customerCount: input.customerCount || 0,
+    growthRate: input.growthRate || 0,
+    activeCustomers: input.activeCustomers || 0,
+    monthlyGrowthRate: input.monthlyGrowthRate || 0,
+    hasLiveProduct: input.hasLiveProduct || false,
+    hasPaidCustomers: input.hasPaidCustomers || false,
+    hasRecurringRevenue: input.hasRecurringRevenue || false,
+    hasScalableBusinessModel: input.hasScalableBusinessModel || false,
+    isOperationallyProfitable: input.isOperationallyProfitable || false,
+    lifetimeValue: input.lifetimeValue || 0,
+    customerAcquisitionCost: input.customerAcquisitionCost || 0,
+    marketSize: input.marketSize || 0,
+    ...input
+  };
+
   let score = 0;
-  score += input.hasPaidCustomers ? 30 : 15;
-  score += (input.monthlyRevenue || 0)> 1000 ? 25 : 10;
-  score += input.hasRecurringRevenue ? 20 : 10;
-  score += Math.min(input.monthlyGrowthRate / 20, 1) * 15;
-  score += (input.activeCustomers || 0) > 100 ? 10 : 5;
-  return Math.min(score, 100);
+  // Artık safe. kullan, input. değil
+  score += safe.hasPaidCustomers ? 30 : 15;
+  score += safe.monthlyRevenue > 1000 ? 25 : 10;
+  score += safe.hasRecurringRevenue ? 20 : 10;
+  score += Math.min(safe.monthlyGrowthRate / 20, 1) * 15;
+  // vs.
+}
 }
 
 function calculateSeriesAScore(input: StageDetectionInput): number {
