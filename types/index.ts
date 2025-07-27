@@ -23,6 +23,7 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
+  company_name?: string; // ← BU SATIRI EKLEYİN!
   role: string;
   onboarding_completed: boolean;
   created_at?: string;
