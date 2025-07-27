@@ -117,6 +117,7 @@ export default function StartupSubmissionForm() {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, FORM_STEPS.length));
+      setError(''); // Clear any existing errors
     } else {
       setError('Please fill in all required fields before proceeding.');
     }
@@ -124,6 +125,7 @@ export default function StartupSubmissionForm() {
 
   const handlePrevious = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
+    setError(''); // Clear any existing errors
   };
 
   const saveDraft = async () => {
@@ -232,7 +234,7 @@ export default function StartupSubmissionForm() {
                 id="industry"
                 value={formData.industry || ''}
                 onChange={(e) => updateFormData({ industry: e.target.value })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 required
               >
                 <option value="">Select your industry</option>
@@ -249,7 +251,7 @@ export default function StartupSubmissionForm() {
                 value={formData.description || ''}
                 onChange={(e) => updateFormData({ description: e.target.value })}
                 placeholder="Brief description of what your company does..."
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 rows={3}
               />
             </div>
@@ -362,7 +364,7 @@ export default function StartupSubmissionForm() {
                   id="has_live_product"
                   checked={formData.has_live_product || false}
                   onChange={(e) => updateFormData({ has_live_product: e.target.checked })}
-                  className="rounded border-gray-300"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
                 />
                 <label htmlFor="has_live_product" className="text-sm">
                   We have a live product/service
@@ -461,7 +463,7 @@ export default function StartupSubmissionForm() {
                     id="has_paid_customers"
                     checked={formData.has_paid_customers || false}
                     onChange={(e) => updateFormData({ has_paid_customers: e.target.checked })}
-                    className="rounded border-gray-300"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
                   />
                   <label htmlFor="has_paid_customers" className="text-sm">
                     We have paying customers
@@ -474,7 +476,7 @@ export default function StartupSubmissionForm() {
                     id="has_recurring_revenue"
                     checked={formData.has_recurring_revenue || false}
                     onChange={(e) => updateFormData({ has_recurring_revenue: e.target.checked })}
-                    className="rounded border-gray-300"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
                   />
                   <label htmlFor="has_recurring_revenue" className="text-sm">
                     We have recurring revenue (subscriptions, contracts)
@@ -487,10 +489,10 @@ export default function StartupSubmissionForm() {
                     id="is_operationally_profitable"
                     checked={formData.is_operationally_profitable || false}
                     onChange={(e) => updateFormData({ is_operationally_profitable: e.target.checked })}
-                    className="rounded border-gray-300"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
                   />
                   <label htmlFor="is_operationally_profitable" className="text-sm">
-                    We are operationally profitable (revenue > costs)
+                    We are operationally profitable (revenue &gt; costs)
                   </label>
                 </div>
 
@@ -500,7 +502,7 @@ export default function StartupSubmissionForm() {
                     id="has_scalable_business_model"
                     checked={formData.has_scalable_business_model || false}
                     onChange={(e) => updateFormData({ has_scalable_business_model: e.target.checked })}
-                    className="rounded border-gray-300"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
                   />
                   <label htmlFor="has_scalable_business_model" className="text-sm">
                     Our business model is highly scalable
@@ -578,14 +580,14 @@ export default function StartupSubmissionForm() {
         </CardHeader>
         <CardContent>
           {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{error}</AlertDescription>
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <AlertDescription className="text-red-700">{error}</AlertDescription>
             </Alert>
           )}
 
           {success && (
-            <Alert variant="success" className="mb-6">
-              <AlertDescription>{success}</AlertDescription>
+            <Alert className="mb-6 border-green-200 bg-green-50">
+              <AlertDescription className="text-green-700">{success}</AlertDescription>
             </Alert>
           )}
 
