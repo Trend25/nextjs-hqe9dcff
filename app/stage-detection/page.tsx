@@ -9,11 +9,14 @@ import {
   StageDetectionResult 
 } from '@/types';
 
-// Utility function: Safe input with all defaults
+// Utility function: Safe input with all defaults (FIXED - no duplicates)
 function createSafeInput(input: StageDetectionInput) {
   return {
+    // String defaults
     companyName: input.companyName || '',
     industry: input.industry || '',
+    
+    // Number defaults
     foundedYear: input.foundedYear || new Date().getFullYear(),
     teamSize: input.teamSize || 0,
     monthlyRevenue: input.monthlyRevenue || 0,
@@ -27,12 +30,13 @@ function createSafeInput(input: StageDetectionInput) {
     lifetimeValue: input.lifetimeValue || 0,
     customerAcquisitionCost: input.customerAcquisitionCost || 0,
     marketSize: input.marketSize || 0,
-    hasLiveProduct: input.hasLiveProduct || false,
-    hasPaidCustomers: input.hasPaidCustomers || false,
-    hasRecurringRevenue: input.hasRecurringRevenue || false,
-    hasScalableBusinessModel: input.hasScalableBusinessModel || false,
-    isOperationallyProfitable: input.isOperationallyProfitable || false,
-    ...input
+    
+    // Boolean defaults
+    hasLiveProduct: input.hasLiveProduct ?? false,
+    hasPaidCustomers: input.hasPaidCustomers ?? false,
+    hasRecurringRevenue: input.hasRecurringRevenue ?? false,
+    hasScalableBusinessModel: input.hasScalableBusinessModel ?? false,
+    isOperationallyProfitable: input.isOperationallyProfitable ?? false,
   };
 }
 
