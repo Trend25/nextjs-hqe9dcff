@@ -216,7 +216,6 @@ export interface StageDetectionInput {
   employees?: number;
   valuation?: number;
   stage?: string;
-  
   // Herhangi bir field için flexibility
   [key: string]: any;
 }
