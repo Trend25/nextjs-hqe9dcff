@@ -64,7 +64,7 @@ export default function StartupSubmissionForm() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  const [formData, setFormData] = useState<StartupSubmission>({
+  const [formData, setFormData] = useState<Partial<StartupSubmission>({
     company_name: '',
     founded_year: new Date().getFullYear(),
     industry: '',
