@@ -377,7 +377,7 @@ export interface StageDetectionInput {
   competitiveAdvantage?: string;
   stage?: string;
   
-  });
+  };
 
   const [result, setResult] = useState<StageDetectionResult | null>(null);
   const [loading, setLoading] = useState(false);
