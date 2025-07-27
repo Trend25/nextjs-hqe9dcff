@@ -334,26 +334,51 @@ function calculatePercentile(value: number, benchmark: number): number {
   return 25;
 }
 
-export default function StageDetectionPage() {
-  const [formData, setFormData] = useState<Partial<StageDetectionInput>>({
-    companyName: '',
-    industry: 'Technology',
-    foundedYear: new Date().getFullYear(),
-    teamSize: 1,
-    monthlyRevenue: 0,
-    totalFunding: 0,
-    burnRate: 0,
-    runway: 12,
-    hasLiveProduct: false,
-    activeCustomers: 0,
-    customerCount: 0,
-    growthRate: 0,
-    monthlyGrowthRate: 0,
-    hasRecurringRevenue: false,
-    hasPaidCustomers: false,
-    hasScalableBusinessModel: false,
-    isOperationallyProfitable: false,
-    productMarketFit: false
+// Stage Detection Input - ULTRA FLEXIBLE VERSION
+export interface StageDetectionInput {
+  // Core fields
+  companyName?: string;
+  industry?: string;
+  foundedYear?: number;
+  teamSize?: number;
+  monthlyRevenue?: number;
+  totalFunding?: number;
+  burnRate?: number;
+  runway?: number;
+  customerCount?: number;
+  growthRate?: number;
+  activeCustomers?: number;
+  monthlyGrowthRate?: number;
+  
+  // Advanced metrics
+  lifetimeValue?: number;
+  customerAcquisitionCost?: number;
+  marketSize?: number;
+  revenue?: number;
+  annualRevenue?: number;
+  monthlyUsers?: number;
+  employees?: number;
+  valuation?: number;
+  fundingGoal?: number;
+  
+  // Boolean fields
+  hasLiveProduct?: boolean;
+  hasPaidCustomers?: boolean;
+  hasRecurringRevenue?: boolean;
+  hasScalableBusinessModel?: boolean;
+  isOperationallyProfitable?: boolean;
+  productMarketFit?: boolean;
+  hasIntellectualProperty?: boolean;
+  
+  // String fields
+  description?: string;
+  website?: string;
+  location?: string;
+  competitiveAdvantage?: string;
+  stage?: string;
+  
+  // FLEXIBLE CATCH-ALL (asla field eksik hatası vermez)
+  [key: string]: any;
   });
 
   const [result, setResult] = useState<StageDetectionResult | null>(null);
