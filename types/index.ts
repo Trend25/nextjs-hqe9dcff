@@ -175,7 +175,7 @@ export interface StartupSubmission {
 // Stage Detection Input - TAMAMEN FLEXIBLE (form'a uygun)
 export interface StageDetectionInput {
   // Zorunlu minimal field'lar
-  companyName: string;
+  companyName?: string;
   
   // Tüm diğer field'lar opsiyonel
   industry?: string;
