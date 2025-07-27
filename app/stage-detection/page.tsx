@@ -724,7 +724,12 @@ export default function StageDetectionPage() {
                           <span>Confidence</span>
                           <span>{result.confidence}%</span>
                         </div>
-                        <Progress value={result.confidence} className="h-2" />
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${Math.min(Math.max(result.confidence, 0), 100)}%` }}
+                          ></div>
+                        </div>
                       </div>
                       
                       <div className="space-y-2 mt-4">
@@ -732,7 +737,12 @@ export default function StageDetectionPage() {
                           <span>Stage Score</span>
                           <span>{result.stageScore}/100</span>
                         </div>
-                        <Progress value={result.stageScore} className="h-2" />
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${Math.min(Math.max(result.stageScore, 0), 100)}%` }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
 
@@ -786,10 +796,12 @@ export default function StageDetectionPage() {
                             Your: {benchmark.your_value?.toLocaleString()} | 
                             Benchmark: {benchmark.benchmark?.toLocaleString()}
                           </div>
-                          <Progress 
-                            value={benchmark.percentile} 
-                            className="h-2"
-                          />
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-orange-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${Math.min(Math.max(benchmark.percentile || 0, 0), 100)}%` }}
+                            ></div>
+                          </div>
                         </div>
                       ))}
                     </div>
