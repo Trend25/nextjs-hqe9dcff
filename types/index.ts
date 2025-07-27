@@ -125,18 +125,28 @@ export interface StartupSubmission {
   company_name: string;
   industry: string;
   founded_year: number;
-   description?: string;
+  description?: string;
   team_size: number;
   founders_count: number;
   key_hires?: number;
   monthly_revenue: number;
   total_funding: number;
+  burn_rate?: number;
+  runway?: number; // ← BU EKSİK!
+  runway_months?: number; // Bu da var, ama runway da gerekli
   growth_rate: number;
   monthly_growth_rate: number;
   customer_count: number;
   active_customers: number;
-  burn_rate?: number;
-  runway_months?: number;
+  
+  // Form'da kullanılan diğer olası field'lar
+  has_live_product?: boolean;
+  has_paid_customers?: boolean;
+  has_recurring_revenue?: boolean;
+  has_scalable_business_model?: boolean;
+  is_operationally_profitable?: boolean;
+  product_market_fit?: boolean;
+  
   metrics: StartupMetrics;
   analysis_result?: StageAnalysisResult;
   is_draft: boolean;
