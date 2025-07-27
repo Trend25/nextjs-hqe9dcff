@@ -10,9 +10,9 @@ import {
 // Helper functions (business logic)
 function calculatePreSeedScore(input: StageDetectionInput): number {
   let score = 0;
-  score += Math.min(input.teamSize / 5, 1) * 35;
-  score += input.hasLiveProduct ? 25 : 15;
-  score += input.activeCustomers > 10 ? 20 : 10;
+  score += Math.min((input.teamSize || 0) / 5, 1) * 35;
+  score += (input.hasLiveProduct || false) ? 25 : 15;
+  score += (input.activeCustomers || 0) > 10 ? 20 : 10;
   score += input.totalFunding > 0 ? 10 : 5;
   score += input.marketSize > 100000 ? 10 : 5;
   return Math.min(score, 100);
@@ -24,7 +24,7 @@ function calculateSeedScore(input: StageDetectionInput): number {
   score += input.monthlyRevenue > 1000 ? 25 : 10;
   score += input.hasRecurringRevenue ? 20 : 10;
   score += Math.min(input.monthlyGrowthRate / 20, 1) * 15;
-  score += input.activeCustomers > 100 ? 10 : 5;
+  score += (input.activeCustomers || 0) > 100 ? 10 : 5;
   return Math.min(score, 100);
 }
 
@@ -41,7 +41,7 @@ function calculateSeriesAScore(input: StageDetectionInput): number {
 function calculateGrowthScore(input: StageDetectionInput): number {
   let score = 0;
   score += input.isOperationallyProfitable ? 40 : 10;
-  score += input.activeCustomers > 1000 ? 25 : 15;
+  score += (input.activeCustomers || 0) > 1000 ? 25 : 15;
   score += input.monthlyRevenue >= 200000 ? 20 : 5;
   score += (input.lifetimeValue > 0 && input.customerAcquisitionCost > 0 && 
            (input.lifetimeValue / input.customerAcquisitionCost) >= 5) ? 15 : 5;
@@ -102,16 +102,16 @@ function getBenchmarks(stage: StartupStage, input: StageDetectionInput): StageDe
     {
       stage,
       metric: 'Ekip Büyüklüğü',
-      your_value: input.teamSize,
+      your_value: (input.teamSize || 0),
       benchmark: benchmark.teamSize,
-      percentile: calculatePercentile(input.teamSize, benchmark.teamSize)
+      percentile: calculatePercentile((input.teamSize || 0), benchmark.teamSize)
     },
     {
       stage,
       metric: 'Aktif Müşteri',
-      your_value: input.activeCustomers,
+      your_value: (input.activeCustomers || 0),
       benchmark: benchmark.activeCustomers,
-      percentile: calculatePercentile(input.activeCustomers, benchmark.activeCustomers)
+      percentile: calculatePercentile((input.activeCustomers || 0), benchmark.activeCustomers)
     },
     {
       stage,
