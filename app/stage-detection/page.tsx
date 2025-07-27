@@ -8,13 +8,25 @@ import {
 } from '../../types';
 
 // Helper functions (business logic)
+
 function calculatePreSeedScore(input: StageDetectionInput): number {
+  // Safe input with defaults
+  const safe = {
+    teamSize: input.teamSize || 0,
+    hasLiveProduct: input.hasLiveProduct || false,
+    activeCustomers: input.activeCustomers || 0,
+    totalFunding: input.totalFunding || 0,
+    marketSize: input.marketSize || 0,
+    monthlyRevenue: input.monthlyRevenue || 0,
+    ...input
+  };
+  
   let score = 0;
-  score += Math.min((input.teamSize || 0) / 5, 1) * 35;
-  score += (input.hasLiveProduct || false) ? 25 : 15;
-  score += (input.activeCustomers || 0) > 10 ? 20 : 10;
-  score += input.totalFunding > 0 ? 10 : 5;
-  score += input.marketSize > 100000 ? 10 : 5;
+  score += Math.min(safe.teamSize / 5, 1) * 35;
+  score += safe.hasLiveProduct ? 25 : 15;
+  score += safe.activeCustomers > 10 ? 20 : 10;
+  score += safe.totalFunding > 0 ? 10 : 5;
+  score += safe.marketSize > 100000 ? 10 : 5;
   return Math.min(score, 100);
 }
 
