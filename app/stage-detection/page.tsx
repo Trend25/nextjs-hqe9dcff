@@ -1,13 +1,10 @@
-// app/stage-detection/page.tsx - TÜM UNDEFINED HATALARINI ÇÖZEN UTILITY
+// app/stage-detection/page.tsx içine SADECE BU KISMI EKLE/DEĞİŞTİR
 
-// Utility function: Safe input with all defaults
+// 1. Utility function ekle (dosyanın başına, import'lardan sonra)
 function createSafeInput(input: StageDetectionInput) {
   return {
-    // String fields
     companyName: input.companyName || '',
     industry: input.industry || '',
-    
-    // Number fields with 0 default
     foundedYear: input.foundedYear || new Date().getFullYear(),
     teamSize: input.teamSize || 0,
     monthlyRevenue: input.monthlyRevenue || 0,
@@ -21,36 +18,19 @@ function createSafeInput(input: StageDetectionInput) {
     lifetimeValue: input.lifetimeValue || 0,
     customerAcquisitionCost: input.customerAcquisitionCost || 0,
     marketSize: input.marketSize || 0,
-    revenue: input.revenue || 0,
-    annualRevenue: input.annualRevenue || 0,
-    monthlyUsers: input.monthlyUsers || 0,
-    fundingGoal: input.fundingGoal || 0,
-    
-    // Boolean fields with false default
     hasLiveProduct: input.hasLiveProduct || false,
     hasPaidCustomers: input.hasPaidCustomers || false,
     hasRecurringRevenue: input.hasRecurringRevenue || false,
     hasScalableBusinessModel: input.hasScalableBusinessModel || false,
     isOperationallyProfitable: input.isOperationallyProfitable || false,
-    productMarketFit: input.productMarketFit || false,
-    hasIntellectualProperty: input.hasIntellectualProperty || false,
-    
-    // String fields with empty default
-    competitiveAdvantage: input.competitiveAdvantage || '',
-    description: input.description || '',
-    website: input.website || '',
-    location: input.location || '',
-    stage: input.stage || '',
-    
-    // Keep original input for any other fields
     ...input
   };
 }
 
-// Updated calculation functions using safe input
+// 2. Mevcut calculation fonksiyonlarını DEĞIŞTIR (safe input kullanacak şekilde)
+
 function calculatePreSeedScore(input: StageDetectionInput): number {
   const safe = createSafeInput(input);
-  
   let score = 0;
   score += Math.min(safe.teamSize / 5, 1) * 35;
   score += safe.hasLiveProduct ? 25 : 15;
@@ -62,7 +42,6 @@ function calculatePreSeedScore(input: StageDetectionInput): number {
 
 function calculateSeedScore(input: StageDetectionInput): number {
   const safe = createSafeInput(input);
-  
   let score = 0;
   score += safe.hasPaidCustomers ? 30 : 15;
   score += safe.monthlyRevenue > 1000 ? 25 : 10;
@@ -74,7 +53,6 @@ function calculateSeedScore(input: StageDetectionInput): number {
 
 function calculateSeriesAScore(input: StageDetectionInput): number {
   const safe = createSafeInput(input);
-  
   let score = 0;
   score += safe.monthlyRevenue >= 50000 ? 35 : safe.monthlyRevenue >= 20000 ? 20 : 0;
   score += safe.hasScalableBusinessModel ? 25 : 10;
@@ -86,7 +64,6 @@ function calculateSeriesAScore(input: StageDetectionInput): number {
 
 function calculateGrowthScore(input: StageDetectionInput): number {
   const safe = createSafeInput(input);
-  
   let score = 0;
   score += safe.isOperationallyProfitable ? 40 : 10;
   score += safe.activeCustomers > 1000 ? 25 : 15;
@@ -96,72 +73,7 @@ function calculateGrowthScore(input: StageDetectionInput): number {
   return Math.min(score, 100);
 }
 
-// Updated main function using safe input
-export default function StageDetectionPage() {
-  const [formData, setFormData] = useState<Partial<StageDetectionInput>>({
-    companyName: '',
-    foundedYear: new Date().getFullYear(),
-    teamSize: 1,
-    monthlyRevenue: 0,
-    totalFunding: 0,
-    burnRate: 0,
-    runway: 12,
-    hasLiveProduct: false,
-    activeCustomers: 0,
-    customerCount: 0,
-    growthRate: 0,
-    monthlyGrowthRate: 0,
-    hasRecurringRevenue: false,
-    hasPaidCustomers: false,
-    hasScalableBusinessModel: false
-  });
-
-  const handleInputChange = (field: keyof StageDetectionInput, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: (field as string).includes('has') || (field as string).includes('is') ? Boolean(value) : value
-    }));
-  };
-
-  const analyzeStage = async () => {
-    // Form validation
-    if (!formData.companyName) {
-      alert('Please enter company name');
-      return;
-    }
-
-    try {
-      const safeInput = createSafeInput(formData as StageDetectionInput);
-      
-      // Calculate scores using safe input
-      const scores = {
-        PRE_SEED: calculatePreSeedScore(safeInput),
-        SEED: calculateSeedScore(safeInput),
-        SERIES_A: calculateSeriesAScore(safeInput),
-        GROWTH: calculateGrowthScore(safeInput)
-      };
-
-      // Determine stage with highest score
-      const detectedStage = Object.entries(scores).reduce((a, b) => 
-        scores[a[0] as StartupStage] > scores[b[0] as StartupStage] ? a : b
-      )[0] as StartupStage;
-
-      const result: StageDetectionResult = {
-        detectedStage,
-        confidence: Math.min(60 + scores[detectedStage], 95),
-        stageScore: scores[detectedStage],
-        reasons: getReasons(detectedStage),
-        recommendations: getRecommendations(detectedStage),
-        nextMilestones: getNextMilestones(detectedStage),
-        benchmarkComparison: getBenchmarks(detectedStage, safeInput)
-      };
-
-      setResult(result);
-    } catch (error) {
-      console.error('Analysis error:', error);
-      alert('Error during analysis. Please try again.');
-    }
-  };
-
-  // Rest of the component...
-}
+// 3. analyzeStage fonksiyonunda createSafeInput kullan
+// Mevcut analyzeStage fonksiyonunda şu satırı değiştir:
+// ❌ ESKI: const input: StageDetectionInput = { ...formData };
+// ✅ YENİ: const input = createSafeInput(formData as StageDetectionInput);
