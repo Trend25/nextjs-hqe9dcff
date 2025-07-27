@@ -125,7 +125,7 @@ export interface StageAnalysisResult {
 // Startup Submission - Dashboard analyses için (snake_case)
  // Startup Submission - ULTRA FLEXIBLE VERSION
 export interface StartupSubmission {
-  // Core required fields (database)
+  // Database fields (all optional)
   id?: string;
   user_id?: string;
   created_at?: string;
@@ -135,8 +135,10 @@ export interface StartupSubmission {
   company_name?: string;
   industry?: string;
   founded_year?: number;
+  description?: string;
   team_size?: number;
   founders_count?: number;
+  key_hires?: number;
   monthly_revenue?: number;
   total_funding?: number;
   burn_rate?: number;
@@ -146,10 +148,6 @@ export interface StartupSubmission {
   monthly_growth_rate?: number;
   customer_count?: number;
   active_customers?: number;
-  
-  // Form fields (all optional)
-  description?: string;
-  key_hires?: number;
   customer_acquisition_cost?: number;
   lifetime_value?: number;
   market_size?: number;
@@ -164,14 +162,14 @@ export interface StartupSubmission {
   product_market_fit?: boolean;
   has_intellectual_property?: boolean;
   
-  // Meta
+  // Meta fields (all optional)
   metrics?: StartupMetrics;
   analysis_result?: StageAnalysisResult;
   is_draft?: boolean;
   
-  // FLEXIBLE CATCH-ALL (asla field eksik hatası vermez)
+  // FLEXIBLE CATCH-ALL (prevents any field errors)
   [key: string]: any;
-}
+
 }
 
 // Stage Detection Input - TAMAMEN FLEXIBLE (form'a uygun)
