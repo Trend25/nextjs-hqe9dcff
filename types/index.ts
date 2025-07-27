@@ -119,43 +119,55 @@ export interface StageAnalysisResult {
 }
 
 // Startup Submission - Dashboard analyses için (snake_case)
+ // Startup Submission - ULTRA FLEXIBLE VERSION
 export interface StartupSubmission {
-  id: string;
-  user_id: string;
-  company_name: string;
-  industry: string;
-  founded_year: number;
-  description?: string;
-  team_size: number;
-  founders_count: number;
-  key_hires?: number;
-  monthly_revenue: number;
-  total_funding: number;
-  burn_rate?: number;
-  runway?: number; // ← BU EKSİK!
-  runway_months?: number; // Bu da var, ama runway da gerekli
-  growth_rate: number;
-  monthly_growth_rate: number;
-  customer_count: number;
-  active_customers: number;
+  // Core required fields (database)
+  id?: string;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
   
-  // Form'da kullanılan diğer olası field'lar
-   customer_acquisition_cost?: number;  // ← BU EKSİK - EKLEYİN!
-  lifetime_value?: number;             // ← BU EKSİK - EKLEYİN!
+  // Business fields (all optional)
+  company_name?: string;
+  industry?: string;
+  founded_year?: number;
+  team_size?: number;
+  founders_count?: number;
+  monthly_revenue?: number;
+  total_funding?: number;
+  burn_rate?: number;
+  runway?: number;
+  runway_months?: number;
+  growth_rate?: number;
+  monthly_growth_rate?: number;
+  customer_count?: number;
+  active_customers?: number;
+  
+  // Form fields (all optional)
+  description?: string;
+  key_hires?: number;
+  customer_acquisition_cost?: number;
+  lifetime_value?: number;
+  market_size?: number;
+  target_market?: string;
+  
+  // Boolean fields (all optional)
   has_live_product?: boolean;
   has_paid_customers?: boolean;
   has_recurring_revenue?: boolean;
   has_scalable_business_model?: boolean;
   is_operationally_profitable?: boolean;
   product_market_fit?: boolean;
+  has_intellectual_property?: boolean;
   
-  metrics: StartupMetrics;
+  // Meta
+  metrics?: StartupMetrics;
   analysis_result?: StageAnalysisResult;
-  is_draft: boolean;
-  created_at: string;
-  updated_at: string;
-   // 🎯 FLEXIBLE FIELD'LAR - Herhangi bir field kabul eder:
+  is_draft?: boolean;
+  
+  // FLEXIBLE CATCH-ALL (asla field eksik hatası vermez)
   [key: string]: any;
+}
 }
 
 // Stage Detection Input - TAMAMEN FLEXIBLE (form'a uygun)
