@@ -355,7 +355,7 @@ export default function StageDetectionPage() {
     isOperationallyProfitable: false,
     productMarketFit: false
   });
-}
+
   const [result, setResult] = useState<StageDetectionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -467,7 +467,6 @@ export default function StageDetectionPage() {
     });
     setResult(null);
     setErrors([]);
-  
   };
 
   return (
