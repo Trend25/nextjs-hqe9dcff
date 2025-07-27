@@ -154,6 +154,8 @@ export interface StartupSubmission {
   is_draft: boolean;
   created_at: string;
   updated_at: string;
+   // 🎯 FLEXIBLE FIELD'LAR - Herhangi bir field kabul eder:
+  [key: string]: any;
 }
 
 // Stage Detection Input - TAMAMEN FLEXIBLE (form'a uygun)
