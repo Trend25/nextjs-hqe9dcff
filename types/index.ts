@@ -19,15 +19,19 @@ export interface AuthContextType {
 }
 
 // User Profile Type - Database ile uyumlu
+// User Profile Type - FLEXIBLE VERSION
 export interface UserProfile {
-  id: string;
-  email: string;
-  full_name: string;
-  company_name?: string; // ← BU SATIRI EKLEYİN!
-  role: string;
-  onboarding_completed: boolean;
+  id?: string;
+  email?: string;
+  full_name?: string;
+  company_name?: string;
+  role?: string;
+  onboarding_completed?: boolean;
   created_at?: string;
   updated_at?: string;
+  
+  // FLEXIBLE CATCH-ALL
+  [key: string]: any;
 }
 
 // Startup Metrics - Genel kullanım
