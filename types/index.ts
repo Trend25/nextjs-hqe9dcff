@@ -125,8 +125,10 @@ export interface StartupSubmission {
   company_name: string;
   industry: string;
   founded_year: number;
+   description?: string;
   team_size: number;
   founders_count: number;
+  key_hires?: number;
   monthly_revenue: number;
   total_funding: number;
   growth_rate: number;
