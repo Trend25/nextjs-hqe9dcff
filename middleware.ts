@@ -19,7 +19,7 @@ export async function middleware(req: NextRequest) {
 
   // Define route protection rules
   const protectedRoutes = [
-    '/dashboard',
+    // '/dashboard',     // ← REMOVED: Let client-side handle dashboard auth
     '/form',
     '/stage-detection', 
     '/results',
@@ -38,7 +38,7 @@ export async function middleware(req: NextRequest) {
     '/form',
     '/stage-detection',
     '/results',
-    '/dashboard'
+    // '/dashboard'      // ← REMOVED: Client-side will handle this
   ];
 
   const currentPath = req.nextUrl.pathname;
@@ -74,7 +74,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // Check if user has completed onboarding for main app routes
-    const mainAppRoutes = ['/form', '/stage-detection', '/results', '/dashboard'];
+    const mainAppRoutes = ['/form', '/stage-detection', '/results']; // ← REMOVED dashboard
     const needsOnboarding = mainAppRoutes.some(route => 
       currentPath.startsWith(route)
     );
