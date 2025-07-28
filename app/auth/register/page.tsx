@@ -22,10 +22,6 @@ function RegisterContent() {
   const searchParams = useSearchParams();
   const { signUp, user, loading } = useAuth();
   
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { signUp, user, loading } = useAuth();
-  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
