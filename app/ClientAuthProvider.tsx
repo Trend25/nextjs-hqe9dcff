@@ -24,7 +24,7 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();  // ← CHANGED: single() to maybeSingle()
 
       if (error) {
         console.error('Error fetching user profile:', error);
