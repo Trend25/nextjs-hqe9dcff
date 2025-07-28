@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,26 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import AnalysisCard from '@/components/dashboard/AnalysisCard';
 import { StageAnalysisResult, StartupSubmission } from '@/types';
 
-export default function AnalysesPage() {
+// Loading component for suspense fallback
+function AnalysesLoading() {
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+// useSearchParams kullanan asıl content component
+function AnalysesContent() {
   const [analyses, setAnalyses] = useState<(StageAnalysisResult & { submission?: StartupSubmission })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -108,8 +127,8 @@ export default function AnalysesPage() {
 
         {/* New Submission Alert */}
         {newSubmission && (
-          <Alert variant="success">
-            <AlertDescription>
+          <Alert className="border-green-200 bg-green-50">
+            <AlertDescription className="text-green-700">
               🎉 Your startup data has been submitted successfully! 
               {analyses.length === 0 && " Your AI analysis will appear here once processing is complete."}
             </AlertDescription>
@@ -205,5 +224,14 @@ export default function AnalysesPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+// Ana page component - Suspense boundary ile
+export default function AnalysesPage() {
+  return (
+    <Suspense fallback={<AnalysesLoading />}>
+      <AnalysesContent />
+    </Suspense>
   );
 }
