@@ -1,10 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../ClientAuthProvider';
 
-export default function RegisterPage() {
+// Loading component for suspense fallback
+function RegisterLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="text-blue-600 font-medium">Loading registration...</p>
+      </div>
+    </div>
+  );
+}
+
+// useSearchParams kullanan asıl content component
+function RegisterContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { signUp, user, loading } = useAuth();
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signUp, user, loading } = useAuth();
@@ -290,5 +307,14 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Ana page component - Suspense boundary ile
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterLoading />}>
+      <RegisterContent />
+    </Suspense>
   );
 }
