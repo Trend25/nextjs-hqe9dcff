@@ -110,15 +110,19 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
         const profile = await fetchUserProfile(session.user.id);
         setUserProfile(profile);
         
-        if (event === 'SIGNED_IN') {
-          console.log('🔍 DEBUG: SIGNED_IN event detected, redirecting to dashboard...');
-          await logActivity('login');
-          
-          // Redirect to dashboard after successful sign in
-          if (typeof window !== 'undefined') {
-            console.log('🔍 DEBUG: Performing redirect to /dashboard');
+        // ✅ HER DURUMDA REDIRECT ET (event kontrolü kaldırıldı)
+        console.log('🔍 DEBUG: Authentication successful, redirecting to dashboard...');
+        
+        if (typeof window !== 'undefined') {
+          console.log('🔍 DEBUG: Performing redirect to /dashboard');
+          // Diğer redirect'leri engellemek için setTimeout kullan
+          setTimeout(() => {
             window.location.href = '/dashboard';
-          }
+          }, 100);
+        }
+        
+        if (event === 'SIGNED_IN') {
+          await logActivity('login');
         }
       } else {
         console.log('🔍 DEBUG: User signed out or no session');
