@@ -4,6 +4,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { createClient, User } from '@supabase/supabase-js';
 import { AuthContextType, UserProfile } from '../types';
 
+// 🔍 DEBUG: File loading
+console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
+
 // Supabase config
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -19,6 +22,7 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch user profile from database
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    console.log('🔍 DEBUG: fetchUserProfile called for userId:', userId);
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -27,13 +31,14 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();  // ← CHANGED: single() to maybeSingle()
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('🔍 DEBUG: Error fetching user profile:', error);
         return null;
       }
 
+      console.log('🔍 DEBUG: User profile fetched successfully:', data);
       return data as UserProfile;
     } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
+      console.error('🔍 DEBUG: Error in fetchUserProfile:', error);
       return null;
     }
   };
@@ -58,29 +63,35 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    console.log('🔍 DEBUG: useEffect - ClientAuthProvider mounted');
+    
     // Get initial session
     const getInitialSession = async () => {
+      console.log('🔍 DEBUG: Getting initial session...');
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('🔍 DEBUG: Error getting session:', error);
           setLoading(false);
           return;
         }
 
         if (session?.user) {
+          console.log('🔍 DEBUG: Initial session found for user:', session.user.email);
           setUser(session.user);
           const profile = await fetchUserProfile(session.user.id);
           setUserProfile(profile);
           
           // Log login activity
           await logActivity('login');
+        } else {
+          console.log('🔍 DEBUG: No initial session found');
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Error in getInitialSession:', error);
+        console.error('🔍 DEBUG: Error in getInitialSession:', error);
         setLoading(false);
       }
     };
@@ -91,17 +102,26 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
+      console.log('🔍 DEBUG: Auth state changed:', event, session?.user?.email);
       
       if (session?.user) {
+        console.log('🔍 DEBUG: User authenticated:', session.user.email);
         setUser(session.user);
         const profile = await fetchUserProfile(session.user.id);
         setUserProfile(profile);
         
         if (event === 'SIGNED_IN') {
+          console.log('🔍 DEBUG: SIGNED_IN event detected, redirecting to dashboard...');
           await logActivity('login');
+          
+          // Redirect to dashboard after successful sign in
+          if (typeof window !== 'undefined') {
+            console.log('🔍 DEBUG: Performing redirect to /dashboard');
+            window.location.href = '/dashboard';
+          }
         }
       } else {
+        console.log('🔍 DEBUG: User signed out or no session');
         setUser(null);
         setUserProfile(null);
       }
@@ -113,6 +133,7 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    console.log('🔍 DEBUG: signUp called for email:', email);
     try {
       setLoading(true);
       
@@ -129,9 +150,10 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      console.log('🔍 DEBUG: signUp successful:', data);
       return { data, error: null };
     } catch (error: any) {
-      console.error('Sign up error:', error);
+      console.error('🔍 DEBUG: Sign up error:', error);
       return { data: null, error: error.message };
     } finally {
       setLoading(false);
@@ -139,6 +161,7 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('🔍 DEBUG: signIn called for email:', email);
     try {
       setLoading(true);
       
@@ -149,9 +172,14 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      console.log('🔍 DEBUG: signIn successful:', data);
+      
+      // Note: Redirect will be handled by onAuthStateChange listener
+      // when SIGNED_IN event is triggered
+      
       return { data, error: null };
     } catch (error: any) {
-      console.error('Sign in error:', error);
+      console.error('🔍 DEBUG: Sign in error:', error);
       return { data: null, error: error.message };
     } finally {
       setLoading(false);
@@ -159,6 +187,7 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    console.log('🔍 DEBUG: signOut called');
     try {
       setLoading(true);
       
@@ -173,8 +202,9 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
       
       setUser(null);
       setUserProfile(null);
+      console.log('🔍 DEBUG: signOut successful');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('🔍 DEBUG: Sign out error:', error);
     } finally {
       setLoading(false);
     }
@@ -185,6 +215,7 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
       throw new Error('No user logged in');
     }
 
+    console.log('🔍 DEBUG: updateProfile called:', profileData);
     try {
       setLoading(true);
 
@@ -205,9 +236,10 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
       // Log profile update activity
       await logActivity('profile_update', profileData);
       
+      console.log('🔍 DEBUG: updateProfile successful:', data);
       return { data, error: null };
     } catch (error: any) {
-      console.error('Update profile error:', error);
+      console.error('🔍 DEBUG: Update profile error:', error);
       return { data: null, error: error.message };
     } finally {
       setLoading(false);
@@ -217,11 +249,12 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async () => {
     if (!user) return;
 
+    console.log('🔍 DEBUG: refreshProfile called');
     try {
       const profile = await fetchUserProfile(user.id);
       setUserProfile(profile);
     } catch (error) {
-      console.error('Error refreshing profile:', error);
+      console.error('🔍 DEBUG: Error refreshing profile:', error);
     }
   };
 
