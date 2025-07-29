@@ -15,10 +15,25 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to get stored auth
+const getStoredAuth = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem('sb-hfrzxhbwjatdnpftrdgr-auth-token');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+};
+
 function ClientAuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  // Initialize with stored auth if available
+  const initialAuth = getStoredAuth();
+  console.log('🔍 DEBUG: Initial auth from localStorage:', !!initialAuth);
+  
+  const [user, setUser] = useState<User | null>(initialAuth?.user || null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialAuth); // Don't load if token exists
 
   // Fetch user profile from database
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -64,6 +79,17 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log('🔍 DEBUG: useEffect - ClientAuthProvider mounted');
+    console.log('🔍 DEBUG: Initial user state:', !!user);
+    console.log('🔍 DEBUG: Initial loading state:', loading);
+    
+    // If we already have user from localStorage, fetch their profile
+    if (initialAuth?.user) {
+      console.log('🔍 DEBUG: User found in localStorage, fetching profile...');
+      fetchUserProfile(initialAuth.user.id).then(profile => {
+        setUserProfile(profile);
+        setLoading(false);
+      });
+    }
     
     // Get initial session
     const getInitialSession = async () => {
@@ -87,6 +113,13 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
           await logActivity('login');
         } else {
           console.log('🔍 DEBUG: No initial session found');
+          // If no session but we had localStorage data, clear it
+          if (initialAuth) {
+            console.log('🔍 DEBUG: Clearing stale localStorage auth');
+            localStorage.removeItem('sb-hfrzxhbwjatdnpftrdgr-auth-token');
+            setUser(null);
+            setUserProfile(null);
+          }
         }
         
         setLoading(false);
@@ -96,7 +129,10 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    getInitialSession();
+    // Only call getInitialSession if we don't have user from localStorage
+    if (!initialAuth?.user) {
+      getInitialSession();
+    }
 
     // Listen for auth changes
     const {
