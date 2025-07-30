@@ -6,13 +6,11 @@ import { AuthContextType, UserProfile } from '../types';
 // 🔍 DEBUG: File loading
 console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
 
-// Supabase config - Direct constants (bypassing import issues)
-const SUPABASE_CONFIG = {
-  url: 'https://hfrzxhbwjatdnpftrdgr.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NTY3NzksImV4cCI6MjA2ODUzMjc3OX0.Fg7TK4FckPi5XAWNM_FLii9WyzSDAUCSdyoX-WLLXhA'
-};
-
-const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+// Supabase config - Direct embed for guaranteed connection
+const supabase = createClient(
+  'https://hfrzxhbwjatdnpftrdgr.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NTY3NzksImV4cCI6MjA2ODUzMjc3OX0.Fg7TK4FckPi5XAWNM_FLii9WyzSDAUCSdyoX-WLLXhA'
+);
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
