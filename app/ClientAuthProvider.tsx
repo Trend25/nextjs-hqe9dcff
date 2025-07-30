@@ -3,12 +3,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { createClient, User } from '@supabase/supabase-js';
 import { AuthContextType, UserProfile } from '../types';
-import { SUPABASE_CONFIG } from '../lib/supabase-config';
-
 // 🔍 DEBUG: File loading
 console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
 
-// Supabase config - Using constants to bypass environment variables issue
+// Supabase config - Direct constants (bypassing import issues)
+const SUPABASE_CONFIG = {
+  url: 'https://hfrzxhbwjatdnpftrdgr.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NTY3NzksImV4cCI6MjA2ODUzMjc3OX0.Fg7TK4FckPi5XAWNM_FLii9WyzSDAUCSdyoX-WLLXhA'
+};
+
 const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
