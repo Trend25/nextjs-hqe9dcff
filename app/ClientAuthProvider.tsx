@@ -6,11 +6,18 @@ import { AuthContextType, UserProfile } from '../types';
 // 🔍 DEBUG: File loading
 console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
 
-// Supabase config - Direct embed for guaranteed connection
-const supabase = createClient(
-  'https://hfrzxhbwjatdnpftrdgr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NTY3NzksImV4cCI6MjA2ODUzMjc3OX0.Fg7TK4FckPi5XAWNM_FLii9WyzSDAUCSdyoX-WLLXhA'
-);
+// EXPLICIT HARDCODED CONSTANTS - MOST AGGRESSIVE APPROACH
+const SUPABASE_URL = 'https://hfrzxhbwjatdnpftrdgr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NTY3NzksImV4cCI6MjA2ODUzMjc3OX0.Fg7TK4FckPi5XAWNM_FLii9WyzSDAUCSdyoX-WLLXhA';
+
+console.log('🔍 DEBUG: Hardcoded Supabase Config:');
+console.log('🔍 DEBUG: - URL:', SUPABASE_URL);
+console.log('🔍 DEBUG: - Key length:', SUPABASE_ANON_KEY.length);
+console.log('🔍 DEBUG: - Key starts with:', SUPABASE_ANON_KEY.substring(0, 20));
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+console.log('🔍 DEBUG: Supabase client created with explicit hardcoded constants');
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -37,12 +44,20 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
   // Fetch user profile from database
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
     console.log('🔍 DEBUG: fetchUserProfile called for userId:', userId);
+    console.log('🔍 DEBUG: Using Supabase client with URL:', SUPABASE_URL);
+    console.log('🔍 DEBUG: API key length:', SUPABASE_ANON_KEY.length);
+    
     try {
+      console.log('🔍 DEBUG: Making Supabase query...');
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();  // ← CHANGED: single() to maybeSingle()
+
+      console.log('🔍 DEBUG: Supabase query completed');
+      console.log('🔍 DEBUG: Query error:', error);
+      console.log('🔍 DEBUG: Query data:', data);
 
       if (error) {
         console.error('🔍 DEBUG: Error fetching user profile:', error);
