@@ -1,7 +1,9 @@
+// ✅ layout dosyaları client değil, server component olduğu için "use client" eklenmez
+import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import './globals.css'
-import ClientAuthProvider from './ClientAuthProvider';
+import ClientAuthProvider from './ClientAuthProvider'
+
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -17,6 +19,12 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className={inter.className}>
+        {/* 🔍 Debug log için test */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `console.log("🌱 RootLayout yüklendi");`,
+          }}
+        />
         <ClientAuthProvider>
           {children}
         </ClientAuthProvider>
