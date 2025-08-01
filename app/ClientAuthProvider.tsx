@@ -54,10 +54,11 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('🔍 DEBUG: AuthProvider mounted');
     let active = true;
+    let ignoreInitial = true;  // Ignore first onAuthStateChange event
     const timer = setTimeout(() => { if (active) setLoading(false); }, 15000);
 
     const init = async () => {
-      console.log('🔍 DEBUG: getSession');
+      console.log('🔍 DEBUG: supabase.auth.getSession');
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
@@ -75,24 +76,30 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     };
     init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔍 DEBUG: onAuthStateChange', event);
-      if (session?.user && active) {
-        setUser(session.user);
-        const profile = await fetchUserProfile(session.user.id);
-        if (active) setUserProfile(profile);
-        if (event === 'SIGNED_IN') {
-          await logActivity('login');
-          if (pathname !== '/dashboard') router.push('/dashboard');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔍 DEBUG: onAuthStateChange', event);
+        if (ignoreInitial) {
+          ignoreInitial = false;
+          return;
         }
+        if (session?.user && active) {
+          setUser(session.user);
+          const profile = await fetchUserProfile(session.user.id);
+          if (active) setUserProfile(profile);
+
+          if (event === 'SIGNED_IN') {
+            await logActivity('login');
+            if (pathname !== '/dashboard') router.push('/dashboard');
+          }
+        } else if (active) {
+          setUser(null);
+          setUserProfile(null);
+        }
+        if (active) setLoading(false);
+        clearTimeout(timer);
       }
-      if (!session && active) {
-        setUser(null);
-        setUserProfile(null);
-      }
-      if (active) setLoading(false);
-      clearTimeout(timer);
-    });
+    );
 
     return () => { active = false; subscription.unsubscribe(); clearTimeout(timer); };
   }, [router, pathname]);
