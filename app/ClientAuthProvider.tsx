@@ -177,7 +177,6 @@ export function useAuth() {
 }
 
 // HOC for protected routes
-import { ReactNode } from 'react';
 export function withAuth<T extends object>(
   Component: React.ComponentType<T>,
   options: { requireEmailVerified?: boolean; requireProfile?: boolean; redirectTo?: string } = {}
