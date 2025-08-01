@@ -114,7 +114,6 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   };
-  };
 
   const signIn = async (email: string, password: string) => {
     console.log('🔍 DEBUG: signIn', email);
