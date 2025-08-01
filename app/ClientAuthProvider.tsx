@@ -77,7 +77,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async async (event, session) => {
         console.log('🔍 DEBUG: onAuthStateChange', event);
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user);
