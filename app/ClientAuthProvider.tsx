@@ -96,24 +96,38 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
 
   // Auth actions
   const signUp = async (email: string, password: string, fullName?: string) => {
+    console.log('🔍 DEBUG: signUp', email);
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName || '' },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    setLoading(false);
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName || '' },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      return { data, error: error ? error.message : null };
+    } catch (e: any) {
+      return { data: null, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  };
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('🔍 DEBUG: signIn', email);
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      return { data, error: error ? error.message : null };
+    } catch (e: any) {
+      return { data: null, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  };
   };
 
   const signOut = async () => {
