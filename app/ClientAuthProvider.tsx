@@ -9,14 +9,9 @@ import { useRouter, usePathname } from 'next/navigation';
 console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
 
 // ✅ ENVIRONMENT VARIABLES
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  'https://hfrzxhbwjatdnpftrdgr.supabase.co';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hfrzxhbwjatdnpftrdgr.supabase.co';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-if (!SUPABASE_ANON_KEY) {
-  console.error(
-    '🚨 ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY missing in environment!'
-  );
-}
+if (!SUPABASE_ANON_KEY) console.error('🚨 ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY missing!');
 console.log('🔍 DEBUG: Env Config:', { SUPABASE_URL, anonKeySet: !!SUPABASE_ANON_KEY });
 
 // Supabase client
@@ -33,42 +28,24 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user profile or fallback
-  const fetchUserProfile = async (userId: string) => {
+  // Fetch or mock user profile
+  const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
     console.log('🔍 DEBUG: fetchUserProfile', userId);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
       if (error) throw error;
-      return data as UserProfile;
+      if (data) return data as UserProfile;
     } catch (e) {
       console.error('🔍 DEBUG: fetchUserProfile error', e);
-      return {
-        id: userId,
-        email: user?.email || '',
-        full_name: user?.user_metadata?.full_name || '',
-        avatar_url: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
     }
+    return { id: userId, email: user?.email || '', full_name: user?.user_metadata?.full_name || '', avatar_url: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
   };
 
   // Log activity
   const logActivity = async (type: string, data?: any) => {
     if (!user) return;
     try {
-      await supabase.from('user_activity_log').insert({
-        user_id: user.id,
-        activity_type: type,
-        activity_data: data,
-        ip_address: null,
-        user_agent:
-          typeof window !== 'undefined' ? navigator.userAgent : null,
-      });
+      await supabase.from('user_activity_log').insert({ user_id: user.id, activity_type: type, activity_data: data, ip_address: null, user_agent: typeof window !== 'undefined' ? navigator.userAgent : null });
     } catch (e) {
       console.error('🔍 DEBUG: logActivity error', e);
     }
@@ -77,13 +54,10 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('🔍 DEBUG: AuthProvider mounted');
     let active = true;
-    const timer = setTimeout(() => {
-      if (active) setLoading(false);
-    }, 15000);
+    const timer = setTimeout(() => { if (active) setLoading(false); }, 15000);
 
-    // Initialize session
     const init = async () => {
-      console.log('🔍 DEBUG: supabase.auth.getSession');
+      console.log('🔍 DEBUG: getSession');
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
@@ -101,32 +75,26 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     };
     init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔍 DEBUG: onAuthStateChange', event);
-        if (session?.user && active) {
-          setUser(session.user);
-          const profile = await fetchUserProfile(session.user.id);
-          if (active) setUserProfile(profile);
-          if (event === 'SIGNED_IN' && pathname !== '/dashboard') {
-            router.push('/dashboard');
-          }
-          if (event === 'SIGNED_IN') await logActivity('login');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔍 DEBUG: onAuthStateChange', event);
+      if (session?.user && active) {
+        setUser(session.user);
+        const profile = await fetchUserProfile(session.user.id);
+        if (active) setUserProfile(profile);
+        if (event === 'SIGNED_IN') {
+          await logActivity('login');
+          if (pathname !== '/dashboard') router.push('/dashboard');
         }
-        if (!session && active) {
-          setUser(null);
-          setUserProfile(null);
-        }
-        if (active) setLoading(false);
-        clearTimeout(timer);
       }
-    );
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
+      if (!session && active) {
+        setUser(null);
+        setUserProfile(null);
+      }
+      if (active) setLoading(false);
       clearTimeout(timer);
-    };
+    });
+
+    return () => { active = false; subscription.unsubscribe(); clearTimeout(timer); };
   }, [router, pathname]);
 
   // Auth methods
@@ -134,43 +102,32 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     console.log('🔍 DEBUG: signUp', email);
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo:
-            typeof window !== 'undefined'
-              ? `${window.location.origin}/auth/callback`
-              : undefined,
-          data: { full_name: fullName || '' },
-        },
-      });
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined, data: { full_name: fullName || '' } } });
       if (error) throw error;
       console.log('🔍 DEBUG: signUp success', data);
       return { data, error: null };
     } catch (e: any) {
       console.error('🔍 DEBUG: signUp error', e);
       return { data: null, error: e.message };
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const signIn = async (email: string, password: string) => {
     console.log('🔍 DEBUG: signIn', email);
     setLoading(true);
     try {
-      const { data, error } =
-        await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       console.log('🔍 DEBUG: signIn success', data);
+      // Manual redirect after successful signIn
+      if (typeof window !== 'undefined') {
+        router.push('/dashboard');
+      }
       return { data, error: null };
     } catch (e: any) {
       console.error('🔍 DEBUG: signIn error', e);
       return { data: null, error: e.message };
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const signOut = async () => {
@@ -184,9 +141,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error('🔍 DEBUG: signOut error', e);
     } finally {
-      setUser(null);
-      setUserProfile(null);
-      setLoading(false);
+      setUser(null); setUserProfile(null); setLoading(false);
     }
   };
 
@@ -195,12 +150,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     if (!user) throw new Error('Not authenticated');
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ ...profileData, updated_at: new Date().toISOString() })
-        .eq('id', user.id)
-        .select()
-        .single();
+      const { data, error } = await supabase.from('profiles').update({ ...profileData, updated_at: new Date().toISOString() }).eq('id', user.id).select().single();
       if (error) throw error;
       setUserProfile(data as UserProfile);
       await logActivity('profile_update', profileData);
@@ -209,9 +159,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     } catch (e: any) {
       console.error('🔍 DEBUG: updateProfile error', e);
       return { data: null, error: e.message };
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const refreshProfile = async () => {
@@ -221,32 +169,16 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       const profile = await fetchUserProfile(user.id);
       setUserProfile(profile);
       console.log('🔍 DEBUG: profile refreshed');
-    } catch (e) {
-      console.error('🔍 DEBUG: refreshProfile error', e);
-    }
+    } catch (e) { console.error('🔍 DEBUG: refreshProfile error', e); }
   };
 
   const isEmailVerified = Boolean(user?.email_confirmed_at);
 
-  const value: AuthContextType = {
-    user,
-    userProfile,
-    loading,
-    isEmailVerified,
-    signUp,
-    signIn,
-    signOut,
-    updateProfile,
-    refreshProfile,
-    logActivity,
-  };
+  const value: AuthContextType = { user, userProfile, loading, isEmailVerified, signUp, signIn, signOut, updateProfile, refreshProfile, logActivity };
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Hook to consume context
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
