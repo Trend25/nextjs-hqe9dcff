@@ -7,19 +7,25 @@ import { AuthContextType, UserProfile } from '../types';
 // 🔍 DEBUG: File loading
 console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
 
-// EXPLICIT HARDCODED CONSTANTS
-const SUPABASE_URL = 'https://hfrzxhbwjatdnpftrdgr.supabase.co';
-// ✅ UPDATED API KEY - replace with your current one
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NTY3NzksImV4cCI6MjA2ODUzMjc3OX0.Fg7TK4FckPi5XAWNM_FLii9WyzSDAUCSdyoX-WLLXhA';
+// ✅ ENVIRONMENT VARIABLES WITH FALLBACKS
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hfrzxhbwjatdnpftrdgr.supabase.co';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-console.log('🔍 DEBUG: Hardcoded Supabase Config:');
+// ✅ ERROR CHECK FOR MISSING API KEY
+if (!SUPABASE_ANON_KEY) {
+  console.error('🚨 ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY not found in environment variables!');
+  console.error('🔧 Please set NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel environment variables');
+}
+
+console.log('🔍 DEBUG: Environment Variables Config:');
 console.log('🔍 DEBUG: - URL:', SUPABASE_URL);
 console.log('🔍 DEBUG: - Key length:', SUPABASE_ANON_KEY.length);
 console.log('🔍 DEBUG: - Key starts with:', SUPABASE_ANON_KEY.substring(0, 20));
+console.log('🔍 DEBUG: - Using env vars:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-console.log('🔍 DEBUG: Supabase client created with explicit hardcoded constants');
+console.log('🔍 DEBUG: Supabase client created with environment variables');
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
