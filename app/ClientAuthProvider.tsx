@@ -180,12 +180,22 @@ export function useAuth() {
 export function withAuth<T>(
   Component: React.ComponentType<T>,
   options: { requireEmailVerified?: boolean; requireProfile?: boolean; redirectTo?: string } = {}
-) {
-  return (props: T) => {
+): React.FC<T> {
+  return function ProtectedComponent(props: T) {
     const { user, userProfile, loading, isEmailVerified } = useAuth();
     const router = useRouter();
-    if (loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500"></div></div>;
-    if (!user || (options.requireEmailVerified && !isEmailVerified) || (options.requireProfile && !userProfile)) {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500"></div>
+        </div>
+      );
+    }
+    if (
+      !user ||
+      (options.requireEmailVerified && !isEmailVerified) ||
+      (options.requireProfile && !userProfile)
+    ) {
       if (typeof window !== 'undefined') {
         const target = options.redirectTo || '/auth/login';
         const current = window.location.pathname;
