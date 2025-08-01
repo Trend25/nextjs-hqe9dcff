@@ -79,6 +79,21 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔍 DEBUG: onAuthStateChange', event);
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
+          const profile = await fetchUserProfile(session.user.id);
+          setUserProfile(profile);
+          console.log('🔍 DEBUG: Redirecting to /dashboard');
+          router.push('/dashboard');
+          await logActivity('login');
+        }
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setUserProfile(null);
+        }
+        setLoading(false);
+      }
+    );
         if (ignoreInitial) {
           ignoreInitial = false;
           return;
