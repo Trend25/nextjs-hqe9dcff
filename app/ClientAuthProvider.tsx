@@ -52,22 +52,21 @@ function ClientAuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('🔍 DEBUG: Making Supabase query...');
       
-      // ✅ TIMEOUT CONTROLLER
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        console.log('🚨 DEBUG: Query timeout after 10 seconds');
-      }, 10000);
-      
-      // ✅ CORRECT TABLE NAME: 'profiles' not 'user_profiles'
-      const { data, error } = await supabase
+      // ✅ TIMEOUT with Promise.race
+      const queryPromise = supabase
         .from('profiles')  // ✅ FIXED: Was 'user_profiles'
         .select('*')
         .eq('id', userId)
-        .maybeSingle()
-        .abortSignal(controller.signal);
-
-      clearTimeout(timeoutId);
+        .maybeSingle();
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Query timeout after 10 seconds'));
+        }, 10000);
+      });
+      
+      // Race between query and timeout
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
       
       console.log('🔍 DEBUG: Supabase query completed');
       console.log('🔍 DEBUG: Query error:', error);
