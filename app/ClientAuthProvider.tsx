@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { createClient, User } from '@supabase/supabase-js';
 import { AuthContextType, UserProfile } from '../types';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 // 🔍 DEBUG: File loading
 console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
@@ -52,6 +52,7 @@ const getStoredAuth = (): { user: User } | null => {
 // Provider component
 export function ClientAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const initialAuth = getStoredAuth();
   console.log('🔍 DEBUG: Initial auth from storage:', !!initialAuth);
 
@@ -181,7 +182,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
           // 🔄 Redirect only on SIGNED_IN
           if (
             event === 'SIGNED_IN' &&
-            router.pathname !== '/dashboard'
+            pathname !== '/dashboard'
           ) {
             router.push('/dashboard');
           }
@@ -203,7 +204,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       clearTimeout(timeoutId);
     };
-  }, [router]);
+  }, [router, pathname]);
 
   // Auth methods
   const signUp = async (
