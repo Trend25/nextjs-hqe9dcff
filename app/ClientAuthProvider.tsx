@@ -54,10 +54,9 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('🔍 DEBUG: AuthProvider mounted');
     let active = true;
-    let ignoreInitial = true;  // Ignore first onAuthStateChange event
-    const timer = setTimeout(() => { if (active) setLoading(false); }, 15000);
 
-    const init = async () => {
+    // Initialize session and profile
+    const initialize = async () => {
       console.log('🔍 DEBUG: supabase.auth.getSession');
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -71,60 +70,35 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
         console.error('🔍 DEBUG: init error', e);
       } finally {
         if (active) setLoading(false);
-        clearTimeout(timer);
       }
     };
-    init();
+    initialize();
 
+    // Listen to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async async (event, session) => {
+      async (event, session) => {
         console.log('🔍 DEBUG: onAuthStateChange', event);
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (event === 'SIGNED_IN' && session?.user && active) {
           setUser(session.user);
           const profile = await fetchUserProfile(session.user.id);
-          setUserProfile(profile);
+          if (active) setUserProfile(profile);
           console.log('🔍 DEBUG: Redirecting to /dashboard');
           router.push('/dashboard');
           await logActivity('login');
         }
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setUserProfile(null);
-        }
-        setLoading(false);
-      }
-    );
-        if (ignoreInitial) {
-          ignoreInitial = false;
-          return;
-        }
-        if (session?.user && active) {
-          setUser(session.user);
-          const profile = await fetchUserProfile(session.user.id);
-          if (active) setUserProfile(profile);
-
-          if (event === 'SIGNED_IN') {
-            await logActivity('login');
-            if (pathname !== '/dashboard') router.push('/dashboard');
-          }
-        } else if (active) {
+        if (event === 'SIGNED_OUT' && active) {
           setUser(null);
           setUserProfile(null);
         }
         if (active) setLoading(false);
-        clearTimeout(timer);
       }
     );
 
-    return () => { active = false; subscription.unsubscribe(); clearTimeout(timer); };
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [router, pathname]);
-
-  // Auth methods
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    console.log('🔍 DEBUG: signUp', email);
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined, data: { full_name: fullName || '' } } });
       if (error) throw error;
       console.log('🔍 DEBUG: signUp success', data);
       return { data, error: null };
