@@ -120,8 +120,28 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      return { data, error: error ? error.message : null };
+      if (error) throw error;
+      console.log('🔍 DEBUG: signIn success', data);
+      // Update user state and profile
+      if (data.session?.user) {
+        setUser(data.session.user);
+        const profile = await fetchUserProfile(data.session.user.id);
+        setUserProfile(profile);
+      }
+      // Redirect to dashboard
+      if (typeof window !== 'undefined') {
+        router.push('/dashboard');
+      }
+      return { data, error: null };
     } catch (e: any) {
+      console.error('🔍 DEBUG: signIn error', e);
+      return { data: null, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+    } catch (e: any) {
+      console.error('🔍 DEBUG: signIn error', e);
       return { data: null, error: e.message };
     } finally {
       setLoading(false);
