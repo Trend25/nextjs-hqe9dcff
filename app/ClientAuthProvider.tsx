@@ -127,7 +127,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   };
-  };
+  
 
   const signOut = async () => {
     setLoading(true);
