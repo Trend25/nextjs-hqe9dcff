@@ -20,7 +20,7 @@ if (!SUPABASE_ANON_KEY) {
 console.log('🔍 DEBUG: Env Config:', { SUPABASE_URL, anonKeySet: !!SUPABASE_ANON_KEY });
 
 // Supabase client
-tconst supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Auth context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
