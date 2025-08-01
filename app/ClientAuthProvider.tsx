@@ -10,7 +10,7 @@ console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOSt
 // EXPLICIT HARDCODED CONSTANTS
 const SUPABASE_URL = 'https://hfrzxhbwjatdnpftrdgr.supabase.co';
 // ✅ UPDATED API KEY - replace with your current one
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1NjI4MjEsImV4cCI6MjA1MTEzODgyMX0.jKKSiKmJ0KINiJAp3dQtdGzO-JLKl8-yLiE4tqD6zvo';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmcnp4aGJ3amF0ZG5wZnRyZGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NTY3NzksImV4cCI6MjA2ODUzMjc3OX0.Fg7TK4FckPi5XAWNM_FLii9WyzSDAUCSdyoX-WLLXhA';
 
 console.log('🔍 DEBUG: Hardcoded Supabase Config:');
 console.log('🔍 DEBUG: - URL:', SUPABASE_URL);
