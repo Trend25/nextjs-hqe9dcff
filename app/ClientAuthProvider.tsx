@@ -42,7 +42,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     console.log('🔍 DEBUG: fetchUserProfile', id);
     try {
       const { data, error } = await supabase
-        .from<UserProfile, UserProfile>('profiles')
+        .from('profiles')
         .select('*')
         .eq('id', id)
         .single();
@@ -197,7 +197,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from<UserProfile>('profiles')
+        .from('profiles')
         .update({ ...profileData, updated_at: new Date().toISOString() })
         .eq('id', user.id)
         .select()
