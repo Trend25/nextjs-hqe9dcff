@@ -1,183 +1,333 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { createClient, User, Session } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createClient, User } from '@supabase/supabase-js';
 import { AuthContextType, UserProfile } from '../types';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
-// Initialize Supabase client
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// 🔍 DEBUG: File loading
+console.log('🔍 DEBUG: ClientAuthProvider file loaded at:', new Date().toISOString());
+
+// ✅ ENVIRONMENT VARIABLES WITH FALLBACKS
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  'https://hfrzxhbwjatdnpftrdgr.supabase.co';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// ✅ ERROR CHECK FOR MISSING API KEY
+if (!SUPABASE_ANON_KEY) {
+  console.error(
+    '🚨 ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY not found in environment variables!'
+  );
+  console.error(
+    '🔧 Please set NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel environment variables'
+  );
+}
+
+console.log('🔍 DEBUG: Environment Variables Config:');
+console.log('🔍 DEBUG: - URL:', SUPABASE_URL);
+console.log('🔍 DEBUG: - Key length:', SUPABASE_ANON_KEY.length);
+console.log('🔍 DEBUG: - Key starts with:', SUPABASE_ANON_KEY.substring(0, 20));
+console.log('🔍 DEBUG: - Using env vars:', !!SUPABASE_ANON_KEY);
+
+// Supabase client creation
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+console.log('🔍 DEBUG: Supabase client created');
 
-// Create authentication context
-const AuthContext = createContext<AuthContextType | null>(null);
+// Create Auth context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Helper to get stored auth from localStorage
+const getStoredAuth = (): { user: User } | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const item = localStorage.getItem(
+      'sb-hfrzxhbwjatdnpftrdgr-auth-token'
+    );
+    return item ? JSON.parse(item) : null;
+  } catch {
+    return null;
+  }
+};
 
 // Provider component
 export function ClientAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const initialAuth = getStoredAuth();
+  console.log('🔍 DEBUG: Initial auth from storage:', !!initialAuth);
 
-  // Fetch user profile or return mock
-  const fetchUserProfile = async (id: string): Promise<UserProfile> => {
+  const [user, setUser] = useState<User | null>(
+    initialAuth?.user || null
+  );
+  const [userProfile, setUserProfile] =
+    useState<UserProfile | null>(null);
+  const [loading, setLoading] =
+    useState(!initialAuth);
+
+  // Fetch user profile helper
+  const fetchUserProfile = async (
+    userId: string
+  ): Promise<UserProfile> => {
+    console.log('🔍 DEBUG: fetchUserProfile for', userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', id)
-        .single();
+        .eq('id', userId)
+        .maybeSingle();
       if (error) throw error;
-      return data;
-    } catch {
-      return {
-        id,
-        email: user?.email || '',
-        full_name: user?.user_metadata?.full_name || '',
-        avatar_url: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      if (data) return data as UserProfile;
+    } catch (e) {
+      console.error('🔍 DEBUG: Error fetching profile:', e);
+    }
+    // Fallback mock profile
+    return {
+      id: userId,
+      email: initialAuth?.user?.email || '',
+      full_name:
+        initialAuth?.user?.user_metadata?.full_name || '',
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  };
+
+  // Log activity helper
+  const logActivity = async (
+    activityType: string,
+    activityData?: any
+  ) => {
+    if (!user) return;
+    try {
+      await supabase.from('user_activity_log').insert({
+        user_id: user.id,
+        activity_type: activityType,
+        activity_data: activityData,
+        ip_address: null,
+        user_agent:
+          typeof window !== 'undefined'
+            ? navigator.userAgent
+            : null,
+      });
+    } catch (e) {
+      console.error('🔍 DEBUG: Error logging activity:', e);
     }
   };
 
-  // Log user activity
-  const logActivity = async (type: string, data?: any) => {
-    if (!user) return;
-    await supabase.from('user_activity_log').insert({
-      user_id: user.id,
-      activity_type: type,
-      activity_data: data,
-      ip_address: null,
-      user_agent: typeof window !== 'undefined' ? navigator.userAgent : null,
-    });
-  };
-
   useEffect(() => {
-    // Initialize session on mount
-    const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        setUserProfile(await fetchUserProfile(session.user.id));
+    console.log('🔍 DEBUG: AuthProvider mounted');
+    let active = true;
+    const timeoutId = setTimeout(() => {
+      if (active && loading) {
+        console.log(
+          '🚨 DEBUG: Loading timeout, forcing loading=false'
+        );
+        setLoading(false);
       }
-      setLoading(false);
+    }, 15000);
+
+    // Initialize session and profile
+    const initialize = async () => {
+      console.log('🔍 DEBUG: getSession');
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        if (session?.user) {
+          setUser(session.user);
+          const profile = await fetchUserProfile(
+            session.user.id
+          );
+          if (!active) return;
+          setUserProfile(profile);
+        } else if (initialAuth?.user) {
+          setUser(initialAuth.user);
+          const profile = await fetchUserProfile(
+            initialAuth.user.id
+          );
+          if (!active) return;
+          setUserProfile(profile);
+        } else {
+          localStorage.removeItem(
+            'sb-hfrzxhbwjatdnpftrdgr-auth-token'
+          );
+          setUser(null);
+        }
+      } catch (e) {
+        console.error('🔍 DEBUG: init error:', e);
+      } finally {
+        if (active) setLoading(false);
+        clearTimeout(timeoutId);
+      }
     };
 
-    init();
+    initialize();
 
-    // Listen for auth state changes
+    // Listen to auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      async (event, session: Session | null) => {
-        if (event === 'SIGNED_IN' && session?.user) {
+      async (event, session) => {
+        console.log('🔍 DEBUG: onAuthStateChange', event);
+        if (session?.user) {
           setUser(session.user);
-          setUserProfile(await fetchUserProfile(session.user.id));
-          await logActivity('login');
-          router.push('/dashboard');
-        } else if (event === 'SIGNED_OUT') {
+          const profile = await fetchUserProfile(
+            session.user.id
+          );
+          if (active) setUserProfile(profile);
+
+          // 🔄 Redirect only on SIGNED_IN
+          if (
+            event === 'SIGNED_IN' &&
+            pathname !== '/dashboard'
+          ) {
+            router.push('/dashboard');
+          }
+
+          if (event === 'SIGNED_IN') {
+            await logActivity('login');
+          }
+        } else {
           setUser(null);
           setUserProfile(null);
-          await logActivity('logout');
-          router.push('/auth/login');
         }
-        setLoading(false);
+        if (active) setLoading(false);
+        clearTimeout(timeoutId);
       }
     );
 
     return () => {
+      active = false;
       subscription.unsubscribe();
+      clearTimeout(timeoutId);
     };
-  }, [router]);
+  }, [router, pathname]);
 
-  // Auth actions
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    console.log('🔍 DEBUG: signUp', email);
+  // Auth methods
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName?: string
+  ) => {
+    console.log('🔍 DEBUG: signUp called for email:', email);
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo:
+            typeof window !== 'undefined'
+              ? `${window.location.origin}/auth/callback`
+              : undefined,
           data: { full_name: fullName || '' },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      return { data, error: error ? error.message : null };
-    } catch (e: any) {
-      return { data: null, error: e.message };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    console.log('🔍 DEBUG: signIn', email);
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      console.log('🔍 DEBUG: signIn success', data);
-      // Update user state and profile
-      if (data.session?.user) {
-        setUser(data.session.user);
-        const profile = await fetchUserProfile(data.session.user.id);
-        setUserProfile(profile);
-      }
-      // Redirect to dashboard
-      if (typeof window !== 'undefined') {
-        router.push('/dashboard');
-      }
+      console.log('🔍 DEBUG: signUp successful:', data);
       return { data, error: null };
     } catch (e: any) {
-      console.error('🔍 DEBUG: signIn error', e);
+      console.error('🔍 DEBUG: Sign up error:', e);
       return { data: null, error: e.message };
     } finally {
       setLoading(false);
     }
   };
+
+  const signIn = async (
+    email: string,
+    password: string
+  ) => {
+    console.log('🔍 DEBUG: signIn called for email:', email);
+    setLoading(true);
+    try {
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      if (error) throw error;
+      console.log('🔍 DEBUG: signIn successful:', data);
+      return { data, error: null };
     } catch (e: any) {
-      console.error('🔍 DEBUG: signIn error', e);
+      console.error('🔍 DEBUG: Sign in error:', e);
       return { data: null, error: e.message };
     } finally {
       setLoading(false);
     }
   };
-  
 
   const signOut = async () => {
+    console.log('🔍 DEBUG: signOut called');
     setLoading(true);
-    await supabase.auth.signOut();
-    setUser(null);
-    setUserProfile(null);
-    setLoading(false);
+    if (user) await logActivity('logout');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      console.log('🔍 DEBUG: signOut successful');
+    } catch (e) {
+      console.error('🔍 DEBUG: signOut error:', e);
+    } finally {
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+    }
   };
 
-  const updateProfile = async (profileData: Partial<UserProfile>) => {
-    if (!user) throw new Error('Not authenticated');
+  const updateProfile = async (
+    profileData: Partial<UserProfile>
+  ) => {
+    console.log('🔍 DEBUG: updateProfile called:', profileData);
+    if (!user || !userProfile) {
+      throw new Error('No user logged in');
+    }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ ...profileData, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-      .single();
-    setLoading(false);
-    return { data, error };
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          ...profileData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setUserProfile(data as UserProfile);
+      await logActivity('profile_update', profileData);
+      console.log('🔍 DEBUG: updateProfile successful:', data);
+      return { data, error: null };
+    } catch (e: any) {
+      console.error('🔍 DEBUG: Update profile error:', e);
+      return { data: null, error: e.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const refreshProfile = async () => {
-    if (user) setUserProfile(await fetchUserProfile(user.id));
+    console.log('🔍 DEBUG: refreshProfile called');
+    if (!user) return;
+    try {
+      const profile = await fetchUserProfile(user.id);
+      setUserProfile(profile);
+      console.log('🔍 DEBUG: Profile refreshed');
+    } catch (e) {
+      console.error('🔍 DEBUG: Error refreshing profile:', e);
+    }
   };
+
+  const isEmailVerified =
+    Boolean(user?.email_confirmed_at);
 
   const value: AuthContextType = {
     user,
     userProfile,
     loading,
-    isEmailVerified: Boolean(user?.email_confirmed_at),
+    isEmailVerified,
     signUp,
     signIn,
     signOut,
@@ -186,45 +336,22 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     logActivity,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-// Hook for consuming auth context
+// Hook to consume auth context
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within ClientAuthProvider');
-  return context;
-}
-
-// HOC for protected routes
-export function withAuth<T extends object>(
-  Component: React.ComponentType<T>,
-  options: { requireEmailVerified?: boolean; requireProfile?: boolean; redirectTo?: string } = {}
-): React.ComponentType<T> {
-  return function ProtectedComponent(props: T) {
-    const { user, userProfile, loading, isEmailVerified } = useAuth();
-    const router = useRouter();
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500"></div>
-        </div>
-      );
-    }
-    if (
-      !user ||
-      (options.requireEmailVerified && !isEmailVerified) ||
-      (options.requireProfile && !userProfile)
-    ) {
-      if (typeof window !== 'undefined') {
-        const target = options.redirectTo || '/auth/login';
-        const current = window.location.pathname;
-        router.push(`${target}?redirect=${encodeURIComponent(current)}`);
-      }
-      return null;
-    }
-    return <Component {...props} />;
-  };
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error(
+      'useAuth must be used within an AuthProvider'
+    );
+  }
+  return ctx;
 }
 
 export default ClientAuthProvider;
