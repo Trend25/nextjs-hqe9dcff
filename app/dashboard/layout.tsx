@@ -1,4 +1,3 @@
-// app/dashboard/layout.tsx
 'use client';
 
 import { useEffect } from 'react';
@@ -11,7 +10,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,84 +31,34 @@ export default function DashboardLayout({
     return null;
   }
 
-  const handleSignOut = async () => {
-    try {
-      const response = await fetch('/api/auth/signout', {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        router.push('/auth/login');
-      }
-    } catch (error) {
-      console.error('Sign out error:', error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {/* Sidebar */}
         <aside className="w-64 min-h-screen bg-white shadow-lg">
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              🚀 RateMyStartup
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">Dashboard</p>
+            <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
           </div>
           
           <nav className="mt-6">
-            <Link 
-              href="/dashboard" 
-              className="block px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-            >
-              <span className="flex items-center">
-                <span className="mr-3">📊</span>
-                Overview
-              </span>
+            <Link href="/dashboard" className="block px-6 py-3 text-gray-700 hover:bg-gray-100">
+              Overview
             </Link>
-            
-            <Link 
-              href="/dashboard/analyses" 
-              className="block px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-            >
-              <span className="flex items-center">
-                <span className="mr-3">📈</span>
-                Analyses
-              </span>
+            <Link href="/dashboard/analyses" className="block px-6 py-3 text-gray-700 hover:bg-gray-100">
+              Analyses
             </Link>
-            
-            <Link 
-              href="/dashboard/submit" 
-              className="block px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-            >
-              <span className="flex items-center">
-                <span className="mr-3">➕</span>
-                Submit Startup
-              </span>
+            <Link href="/dashboard/submit" className="block px-6 py-3 text-gray-700 hover:bg-gray-100">
+              Submit
             </Link>
-            
-            <Link 
-              href="/dashboard/profile" 
-              className="block px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-            >
-              <span className="flex items-center">
-                <span className="mr-3">👤</span>
-                Profile
-              </span>
+            <Link href="/dashboard/profile" className="block px-6 py-3 text-gray-700 hover:bg-gray-100">
+              Profile
             </Link>
           </nav>
           
-          <div className="absolute bottom-0 w-64 p-6 border-t">
-            <div className="mb-4">
-              <p className="text-sm text-gray-500">Logged in as:</p>
-              <p className="text-sm font-medium text-gray-700 truncate">
-                {user?.email}
-              </p>
-            </div>
+          <div className="absolute bottom-0 w-64 p-6">
             <button
-              onClick={handleSignOut}
-              className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              onClick={() => signOut()}
+              className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             >
               Sign Out
             </button>
