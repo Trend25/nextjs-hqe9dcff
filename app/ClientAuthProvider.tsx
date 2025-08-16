@@ -1,4 +1,3 @@
-// app/ClientAuthProvider.tsx
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -6,9 +5,19 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User, Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  company_name?: string;
+  role?: string;
+  onboarding_completed?: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<any>;
   signUp: (email: string, password: string, fullName?: string) => Promise<any>;
@@ -18,6 +27,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
+  userProfile: null,
   loading: true,
   signIn: async () => {},
   signUp: async () => {},
@@ -27,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
 export default function ClientAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
   const router = useRouter();
@@ -37,6 +48,19 @@ export default function ClientAuthProvider({ children }: { children: React.React
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Fetch user profile if user exists
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile) {
+            setUserProfile(profile);
+          }
+        }
       } catch (error) {
         console.error('Error checking user:', error);
       } finally {
@@ -51,6 +75,21 @@ export default function ClientAuthProvider({ children }: { children: React.React
         console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile on auth change
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile) {
+            setUserProfile(profile);
+          }
+        } else {
+          setUserProfile(null);
+        }
         
         if (event === 'SIGNED_IN') {
           router.push('/dashboard');
@@ -126,6 +165,7 @@ export default function ClientAuthProvider({ children }: { children: React.React
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
+      setUserProfile(null);
       router.push('/auth/login');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -136,6 +176,7 @@ export default function ClientAuthProvider({ children }: { children: React.React
     <AuthContext.Provider value={{ 
       user, 
       session, 
+      userProfile,
       loading, 
       signIn, 
       signUp, 
