@@ -1,45 +1,15 @@
+// app/dashboard/analyses/page.tsx
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/app/ClientAuthProvider';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import AnalysisCard from '@/components/dashboard/AnalysisCard';
-import { StageAnalysisResult, StartupSubmission } from '@/types';
 
-// Loading component for suspense fallback
-function AnalysesLoading() {
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </DashboardLayout>
-  );
-}
-
-// useSearchParams kullanan asıl content component
-function AnalysesContent() {
-  const [analyses, setAnalyses] = useState<(StageAnalysisResult & { submission?: StartupSubmission })[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
-  const { user } = useAuth();
-  const searchParams = useSearchParams();
-  const newSubmission = searchParams.get('new_submission');
-  
+export default function AnalysesPage() {
+  const { user, loading } = useAuth();
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -50,188 +20,210 @@ function AnalysesContent() {
 
   const fetchAnalyses = async () => {
     try {
-      setLoading(true);
-      
-      // Fetch analyses with related submission data
-      const { data: analysesData, error: analysesError } = await supabase
+      setIsLoading(true);
+      const { data, error } = await supabase
         .from('stage_analysis_results')
-        .select(`
-          *,
-          startup_submissions:submission_id (
-            id,
-            company_name,
-            industry,
-            monthly_revenue,
-            total_funding,
-            team_size
-          )
-        `)
+        .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
-      if (analysesError) throw analysesError;
-
-      // Transform the data to match our expected structure
-      const transformedData = (analysesData || []).map(analysis => ({
-        ...analysis,
-        submission: analysis.startup_submissions
-      }));
-
-      setAnalyses(transformedData);
-    } catch (err: any) {
-      console.error('Error fetching analyses:', err);
-      setError('Failed to load analyses');
+      if (error) throw error;
+      setAnalyses(data || []);
+    } catch (error) {
+      console.error('Error fetching analyses:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  if (!user) {
-    return null;
-  }
-
-  if (loading) {
+  if (loading || isLoading) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
+      <div className="animate-pulse space-y-6">
+        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        <div className="space-y-4">
+          <div className="h-24 bg-gray-200 rounded"></div>
+          <div className="h-24 bg-gray-200 rounded"></div>
+          <div className="h-24 bg-gray-200 rounded"></div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
+  const getStageLabel = (stage: string) => {
+    const labels: { [key: string]: string } = {
+      'PRE_SEED': 'Pre-Seed',
+      'SEED': 'Seed',
+      'SERIES_A': 'Series A',
+      'GROWTH': 'Growth'
+    };
+    return labels[stage] || stage;
+  };
+
+  const getStageIcon = (stage: string) => {
+    const icons: { [key: string]: string } = {
+      'PRE_SEED': '🌱',
+      'SEED': '🌿',
+      'SERIES_A': '🌳',
+      'GROWTH': '🚀'
+    };
+    return icons[stage] || '📊';
+  };
+
+  const getStageColor = (stage: string) => {
+    const colors: { [key: string]: string } = {
+      'PRE_SEED': 'bg-purple-100 text-purple-800 border-purple-200',
+      'SEED': 'bg-blue-100 text-blue-800 border-blue-200',
+      'SERIES_A': 'bg-green-100 text-green-800 border-green-200',
+      'GROWTH': 'bg-orange-100 text-orange-800 border-orange-200'
+    };
+    return colors[stage] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
+  const getConfidenceColor = (score: number) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Stage Analyses</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Review your startup's stage progression and AI-powered insights
-            </p>
-          </div>
-          <div className="mt-4 sm:mt-0">
-            <Link href="/dashboard/submit">
-              <Button>Submit New Data</Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Your Analyses
+          </h1>
+          <p className="mt-2 text-gray-600">
+            View all your startup stage analyses and insights
+          </p>
+        </div>
+        <Link href="/dashboard/submit">
+          <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center">
+            <span className="mr-2">➕</span>
+            New Analysis
+          </button>
+        </Link>
+      </div>
+
+      {/* Analyses List */}
+      {analyses.length > 0 ? (
+        <div className="grid gap-4">
+          {analyses.map((analysis) => (
+            <Link 
+              key={analysis.id} 
+              href={`/dashboard/analyses/${analysis.id}`}
+              className="block"
+            >
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-4">
+                    <div className="text-3xl">
+                      {getStageIcon(analysis.detected_stage)}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Stage Analysis
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Created on {new Date(analysis.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                      
+                      <div className="flex items-center space-x-4 mt-3">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStageColor(analysis.detected_stage)}`}>
+                          {getStageLabel(analysis.detected_stage)}
+                        </span>
+                        <span className={`text-sm font-medium ${getConfidenceColor(analysis.confidence_score)}`}>
+                          {analysis.confidence_score}% confidence
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          Stage Score: {analysis.stage_score}/100
+                        </span>
+                      </div>
+
+                      {analysis.reasons && analysis.reasons.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm text-gray-600">
+                            💡 {analysis.reasons[0].substring(0, 100)}...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-blue-600">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </Link>
+          ))}
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-4xl">📊</span>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            No analyses yet
+          </h3>
+          <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+            Submit your startup data to get AI-powered insights about your current stage and growth trajectory.
+          </p>
+          <Link href="/dashboard/submit">
+            <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+              Create Your First Analysis
+            </button>
+          </Link>
+        </div>
+      )}
+
+      {/* Stats Summary */}
+      {analyses.length > 0 && (
+        <div className="bg-gray-50 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Summary Statistics</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Total Analyses</p>
+              <p className="text-2xl font-bold text-gray-900">{analyses.length}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Average Confidence</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {Math.round(analyses.reduce((acc, curr) => acc + curr.confidence_score, 0) / analyses.length)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Most Common Stage</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {(() => {
+                  const stageCounts = analyses.reduce((acc, curr) => {
+                    acc[curr.detected_stage] = (acc[curr.detected_stage] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  const mostCommon = Object.entries(stageCounts).sort((a, b) => b[1] - a[1])[0];
+                  return mostCommon ? getStageLabel(mostCommon[0]) : 'N/A';
+                })()}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Latest Analysis</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {new Date(analyses[0]?.created_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </p>
+            </div>
           </div>
         </div>
-
-        {/* New Submission Alert */}
-        {newSubmission && (
-          <Alert className="border-green-200 bg-green-50">
-            <AlertDescription className="text-green-700">
-              🎉 Your startup data has been submitted successfully! 
-              {analyses.length === 0 && " Your AI analysis will appear here once processing is complete."}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Empty State */}
-        {analyses.length === 0 && !loading && (
-          <Card className="border-2 border-dashed border-gray-200">
-            <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <CardTitle>No Stage Analyses Yet</CardTitle>
-              <CardDescription>
-                Submit your startup data to get AI-powered stage analysis and personalized insights.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Link href="/dashboard/submit">
-                <Button size="lg">Submit Your First Data →</Button>
-              </Link>
-              <p className="mt-4 text-sm text-gray-500">
-                Our AI will analyze your metrics and determine if you're Pre-Seed, Seed, Series A, or Growth stage.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Analyses List */}
-        {analyses.length > 0 && (
-          <div className="space-y-6">
-            <div className="grid gap-6">
-              {analyses.map((analysis) => (
-                <AnalysisCard 
-                  key={analysis.id} 
-                  analysis={analysis}
-                  submission={analysis.submission}
-                />
-              ))}
-            </div>
-
-            {/* Load More (if pagination needed) */}
-            {analyses.length >= 10 && (
-              <div className="text-center">
-                <Button variant="outline">Load More Analyses</Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Quick Stats */}
-        {analyses.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Analysis Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">{analyses.length}</div>
-                  <div className="text-xs text-gray-500">Total Analyses</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {analyses[0]?.detected_stage.replace('_', '-') || '—'}
-                  </div>
-                  <div className="text-xs text-gray-500">Current Stage</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {analyses[0]?.confidence_score || 0}%
-                  </div>
-                  <div className="text-xs text-gray-500">Latest Confidence</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {Math.round(analyses.reduce((acc, a) => acc + (a.confidence_score || 0), 0) / analyses.length) || 0}%
-                  </div>
-                  <div className="text-xs text-gray-500">Avg Confidence</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </DashboardLayout>
-  );
-}
-
-// Ana page component - Suspense boundary ile
-export default function AnalysesPage() {
-  return (
-    <Suspense fallback={<AnalysesLoading />}>
-      <AnalysesContent />
-    </Suspense>
+      )}
+    </div>
   );
 }
