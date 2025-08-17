@@ -7,9 +7,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/app/ClientAuthProvider';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { StartupSubmission } from '@/types';
+import type { User } from '@supabase/supabase-js';
+
+interface StartupSubmission {
+  company_name: string;
+  founded_year: number;
+  industry: string;
+  description?: string;
+  team_size: number;
+  founders_count: number;
+  key_hires: number;
+  monthly_revenue: number;
+  total_funding: number;
+  burn_rate: number;
+  runway?: number;
+  has_live_product: boolean;
+  active_customers: number;
+  monthly_growth_rate: number;
+  customer_acquisition_cost: number;
+  lifetime_value: number;
+  has_paid_customers: boolean;
+  has_recurring_revenue: boolean;
+  is_operationally_profitable: boolean;
+  has_scalable_business_model: boolean;
+  market_size: number;
+  target_market?: string;
+  is_draft: boolean;
+  user_id?: string;
+}
 
 const FORM_STEPS = [
   {
@@ -54,13 +80,46 @@ const INDUSTRIES = [
   'Other',
 ];
 
+// Helper function to calculate runway
+function calculateRunway(totalFunding: number, monthlyRevenue: number, burnRate: number): string {
+  if (burnRate === 0) {
+    return 'Unlimited (no burn)';
+  }
+  
+  const netBurn = burnRate - monthlyRevenue;
+  
+  if (netBurn <= 0) {
+    return 'Unlimited (profitable)';
+  }
+  
+  const runwayMonths = Math.floor(totalFunding / netBurn);
+  
+  if (runwayMonths < 0) {
+    return 'No funding available';
+  }
+  
+  if (runwayMonths === 0) {
+    return 'Less than 1 month ⚠️';
+  }
+  
+  if (runwayMonths === 1) {
+    return '1 month ⚠️';
+  }
+  
+  if (runwayMonths < 6) {
+    return `${runwayMonths} months ⚠️`;
+  }
+  
+  return `${runwayMonths} months`;
+}
+
 export default function StartupSubmissionForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
-  const { user } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -90,6 +149,15 @@ export default function StartupSubmissionForm() {
     is_draft: true,
   });
 
+  useEffect(() => {
+    getUser();
+  }, []);
+
+  const getUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+  };
+
   const updateFormData = (updates: Partial<StartupSubmission>) => {
     setFormData(prev => ({
       ...prev,
@@ -102,9 +170,9 @@ export default function StartupSubmissionForm() {
       case 1:
         return !!(formData.company_name && formData.industry);
       case 2:
-        return !!(formData.team_size && formData.founders_count !== undefined);
+        return !!(formData.team_size >= 1 && formData.founders_count >= 1);
       case 3:
-        return true; // Financial data is optional in early steps
+        return true; // Financial data is optional in early stages
       case 4:
         return true; // Product data is optional
       case 5:
@@ -117,7 +185,7 @@ export default function StartupSubmissionForm() {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, FORM_STEPS.length));
-      setError(''); // Clear error when moving forward
+      setError('');
     } else {
       setError('Please fill in all required fields before proceeding.');
     }
@@ -125,11 +193,14 @@ export default function StartupSubmissionForm() {
 
   const handlePrevious = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
-    setError(''); // Clear error when moving backward
+    setError('');
   };
 
   const saveDraft = async () => {
-    if (!user) return;
+    if (!user) {
+      setError('You must be logged in to save a draft');
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -152,22 +223,27 @@ export default function StartupSubmissionForm() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       console.error('Error saving draft:', err);
-      setError('Failed to save draft. Please try again.');
+      setError(err.message || 'Failed to save draft. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const submitForm = async () => {
-    if (!user) return;
+    if (!user) {
+      setError('You must be logged in to submit');
+      return;
+    }
 
     try {
       setIsLoading(true);
       setError('');
+      setSuccess('');
 
       // Final validation
       if (!formData.company_name || !formData.industry) {
         setError('Please complete at least the company information before submitting.');
+        setIsLoading(false);
         return;
       }
 
@@ -179,22 +255,35 @@ export default function StartupSubmissionForm() {
         updated_at: new Date().toISOString(),
       };
 
+      console.log('Submitting data:', submissionData);
+
       const { data, error: submitError } = await supabase
         .from('startup_submissions')
-        .upsert([submissionData])
+        .insert([submissionData])
         .select()
         .single();
 
-      if (submitError) throw submitError;
+      if (submitError) {
+        console.error('Supabase error:', submitError);
+        throw submitError;
+      }
 
-      // Trigger AI analysis (this would call a serverless function)
-      // For now, we'll just redirect to a success page
-      router.push(`/dashboard/analyses?new_submission=${data.id}`);
+      console.log('Submission successful:', data);
+      
+      // Show success message before redirect
+      setSuccess('Submission successful! Redirecting...');
+      
+      // Delay redirect slightly to show success message
+      setTimeout(() => {
+        router.push(`/dashboard/analyses${data?.id ? `?new_submission=${data.id}` : ''}`);
+      }, 1500);
 
     } catch (err: any) {
       console.error('Error submitting form:', err);
-      setError('Failed to submit form. Please try again.');
-    } finally {
+      const errorMessage = err.message || 'Failed to submit form. Please try again.';
+      setError(errorMessage);
+      
+      // Keep error visible
       setIsLoading(false);
     }
   };
@@ -266,8 +355,11 @@ export default function StartupSubmissionForm() {
               <Input
                 id="team_size"
                 type="number"
-                value={formData.team_size || ''}
-                onChange={(e) => updateFormData({ team_size: parseInt(e.target.value) || 1 })}
+                value={formData.team_size}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  updateFormData({ team_size: isNaN(value) ? 1 : Math.max(1, value) });
+                }}
                 placeholder="5"
                 min="1"
               />
@@ -279,8 +371,11 @@ export default function StartupSubmissionForm() {
               <Input
                 id="founders_count"
                 type="number"
-                value={formData.founders_count || ''}
-                onChange={(e) => updateFormData({ founders_count: parseInt(e.target.value) || 1 })}
+                value={formData.founders_count}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  updateFormData({ founders_count: isNaN(value) ? 1 : Math.max(1, value) });
+                }}
                 placeholder="2"
                 min="1"
               />
@@ -291,17 +386,28 @@ export default function StartupSubmissionForm() {
               <Input
                 id="key_hires"
                 type="number"
-                value={formData.key_hires || ''}
-                onChange={(e) => updateFormData({ key_hires: parseInt(e.target.value) || 0 })}
+                value={formData.key_hires}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  updateFormData({ key_hires: isNaN(value) ? 0 : Math.max(0, value) });
+                }}
                 placeholder="0"
                 min="0"
               />
-              <p className="text-sm text-gray-500">Non-founder executives and senior leadership</p>
+              <p className="text-sm text-gray-500">
+                Non-founder executives and senior leadership (Enter 0 if none)
+              </p>
             </div>
           </div>
         );
 
       case 3:
+        const runway = calculateRunway(
+          formData.total_funding || 0,
+          formData.monthly_revenue || 0,
+          formData.burn_rate || 0
+        );
+        
         return (
           <div className="space-y-6">
             <div className="space-y-2">
@@ -318,7 +424,7 @@ export default function StartupSubmissionForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="total_funding">Total Funding Raised (USD)</Label>
+              <Label htmlFor="total_funding">Total Funding Available (USD)</Label>
               <Input
                 id="total_funding"
                 type="number"
@@ -327,7 +433,7 @@ export default function StartupSubmissionForm() {
                 placeholder="100000"
                 min="0"
               />
-              <p className="text-sm text-gray-500">Include all funding rounds, grants, and investments</p>
+              <p className="text-sm text-gray-500">Current bank balance / available capital</p>
             </div>
 
             <div className="space-y-2">
@@ -340,14 +446,23 @@ export default function StartupSubmissionForm() {
                 placeholder="5000"
                 min="0"
               />
-              <p className="text-sm text-gray-500">Monthly expenses and operational costs</p>
+              <p className="text-sm text-gray-500">Total monthly expenses (salaries, rent, etc.)</p>
             </div>
 
-            {formData.burn_rate && formData.burn_rate > 0 && formData.total_funding && formData.total_funding > 0 && (
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  <strong>Estimated Runway:</strong> {Math.floor((formData.total_funding - (formData.monthly_revenue || 0)) / formData.burn_rate)} months
+            {formData.burn_rate > 0 && (
+              <div className={`p-4 rounded-lg ${
+                runway.includes('⚠️') ? 'bg-red-50 border border-red-200' : 'bg-blue-50'
+              }`}>
+                <p className={`text-sm font-semibold ${
+                  runway.includes('⚠️') ? 'text-red-700' : 'text-blue-700'
+                }`}>
+                  <strong>Estimated Runway:</strong> {runway}
                 </p>
+                {runway.includes('Less than') && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Critical: Immediate funding needed to continue operations
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -455,7 +570,7 @@ export default function StartupSubmissionForm() {
           <div className="space-y-6">
             <div className="space-y-4">
               <Label>Business Model Characteristics</Label>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <input
@@ -492,7 +607,7 @@ export default function StartupSubmissionForm() {
                     className="rounded border-gray-300"
                   />
                   <label htmlFor="is_operationally_profitable" className="text-sm">
-                    We are operationally profitable (revenue &gt; costs)
+                    We are operationally profitable (revenue > costs)
                   </label>
                 </div>
 
@@ -516,8 +631,8 @@ export default function StartupSubmissionForm() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Submission Summary</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p><strong>Company:</strong> {formData.company_name}</p>
-                  <p><strong>Industry:</strong> {formData.industry}</p>
+                  <p><strong>Company:</strong> {formData.company_name || 'Not specified'}</p>
+                  <p><strong>Industry:</strong> {formData.industry || 'Not specified'}</p>
                   <p><strong>Team Size:</strong> {formData.team_size} people</p>
                 </div>
                 <div>
@@ -565,7 +680,7 @@ export default function StartupSubmissionForm() {
           ))}
         </div>
         <div className="absolute top-5 left-0 right-0 h-1 bg-gray-200 -z-10">
-          <div 
+          <div
             className="h-full bg-blue-600 transition-all duration-300"
             style={{ width: `${((currentStep - 1) / (FORM_STEPS.length - 1)) * 100}%` }}
           />
@@ -605,13 +720,13 @@ export default function StartupSubmissionForm() {
           >
             Previous
           </Button>
-          
+
           <Button
             variant="ghost"
             onClick={saveDraft}
             disabled={isLoading}
           >
-            {isLoading ? 'Saving...' : 'Save Draft'}
+            {isLoading && !success ? 'Saving...' : 'Save Draft'}
           </Button>
         </div>
 
@@ -626,10 +741,10 @@ export default function StartupSubmissionForm() {
           ) : (
             <Button
               onClick={submitForm}
-              disabled={isLoading}
+              disabled={isLoading || !formData.company_name || !formData.industry}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isLoading ? 'Submitting...' : 'Submit for Analysis 🚀'}
+              {isLoading && !success ? 'Submitting...' : 'Submit for Analysis 🚀'}
             </Button>
           )}
         </div>
