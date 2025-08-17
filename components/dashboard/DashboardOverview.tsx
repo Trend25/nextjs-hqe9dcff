@@ -5,35 +5,59 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/app/ClientAuthProvider';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { StartupSubmission, StageAnalysisResult } from '@/types';
 import { formatDate, getStartupStageColor, getConfidenceScoreColor } from '@/lib/utils';
+import type { User } from '@supabase/supabase-js';
+
+// Type definitions
+interface StartupSubmission {
+  id: string;
+  company_name: string;
+  created_at: string;
+  is_draft: boolean;
+  user_id: string;
+}
+
+interface StageAnalysisResult {
+  id: string;
+  detected_stage: string;
+  confidence_score: number;
+  created_at: string;
+  user_id: string;
+}
 
 export default function DashboardOverview() {
-  const { user, userProfile } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const [submissions, setSubmissions] = useState<StartupSubmission[]>([]);
   const [analyses, setAnalyses] = useState<StageAnalysisResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
+    getUser();
+  }, []);
 
-  const fetchDashboardData = async () => {
+  const getUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUser(user);
+      fetchDashboardData(user.id);
+    } else {
+      setLoading(false);
+    }
+  };
+
+  const fetchDashboardData = async (userId: string) => {
     try {
       setLoading(true);
-      
+
       // Fetch recent submissions
       const { data: submissionsData, error: submissionsError } = await supabase
         .from('startup_submissions')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -43,7 +67,7 @@ export default function DashboardOverview() {
       const { data: analysesData, error: analysesError } = await supabase
         .from('stage_analysis_results')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -190,7 +214,7 @@ export default function DashboardOverview() {
               </div>
             ) : (
               <div>
-                <div className="text-2xl font-bold text-gray-400">—</div>
+                <div className="text-2xl font-bold text-gray-400">---</div>
                 <p className="text-xs text-muted-foreground">Submit data to get analysis</p>
               </div>
             )}
@@ -324,7 +348,7 @@ export default function DashboardOverview() {
                 Submit Data
               </Button>
             </Link>
-            
+
             <Link href="/dashboard/analyses">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center">
                 <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,7 +357,7 @@ export default function DashboardOverview() {
                 View Analyses
               </Button>
             </Link>
-            
+
             <Link href="/dashboard/profile">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center">
                 <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,7 +366,7 @@ export default function DashboardOverview() {
                 Edit Profile
               </Button>
             </Link>
-            
+
             <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center" disabled>
               <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
