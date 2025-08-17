@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/ClientAuthProvider';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
 
 export default function ProfileForm() {
-  const { user, signOut } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -19,19 +19,24 @@ export default function ProfileForm() {
   const supabase = createClientComponentClient();
   const router = useRouter();
 
-  // Profil verilerini yükle
+  // User ve profil verilerini yükle
   useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        fetchProfile(user.id);
+      }
+    };
+    getUser();
+  }, []);
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', userId)
         .single();
 
       if (data) {
@@ -71,6 +76,11 @@ export default function ProfileForm() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -166,7 +176,7 @@ export default function ProfileForm() {
 
           <button
             type="button"
-            onClick={() => signOut()}
+            onClick={handleSignOut}
             className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
           >
             Çıkış Yap
