@@ -37,7 +37,7 @@ export default function AnalysisCard({ analysis, submission, showActions = true 
   };
 
   const getConfidenceIcon = (score: number) => {
-    if (score >= 80) return '🎯';
+    if (score >= 80) return '💚';
     if (score >= 60) return '✅';
     return '⚠️';
   };
@@ -59,7 +59,7 @@ export default function AnalysisCard({ analysis, submission, showActions = true 
               </div>
             </div>
           </div>
-          
+
           {showActions && (
             <div className="flex space-x-2">
               <Link href={`/dashboard/analyses/${analysis.id}`}>
@@ -113,13 +113,13 @@ export default function AnalysisCard({ analysis, submission, showActions = true 
               <div>
                 <div className="text-xs text-gray-500">Monthly Revenue</div>
                 <div className="text-sm font-medium text-gray-900">
-                  {formatCurrency(submission.monthly_revenue)}
+                  {formatCurrency(submission.monthly_revenue || 0)}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-gray-500">Total Funding</div>
                 <div className="text-sm font-medium text-gray-900">
-                  {formatCurrency(submission.total_funding)}
+                  {formatCurrency(submission.total_funding || 0)}
                 </div>
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function AnalysisCard({ analysis, submission, showActions = true 
                     <span className="text-xs text-gray-600">{item.label}</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-blue-500 transition-all duration-300"
                           style={{ width: `${item.score}%` }}
                         />
