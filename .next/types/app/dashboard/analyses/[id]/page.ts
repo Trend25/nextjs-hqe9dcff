@@ -6,8 +6,13 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { formatDate, formatCurrency, getStartupStageColor, getConfidenceScoreColor } from '@/lib/utils';
 import Link from 'next/link';
+
+// Basit format fonksiyonları (lib/utils'de yoksa)
+const formatDate = (date: string) => new Date(date).toLocaleDateString();
+const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
+const getStartupStageColor = (stage: string) => 'bg-blue-100 text-blue-800';
+const getConfidenceScoreColor = (score: number) => score > 80 ? 'text-green-600' : 'text-yellow-600';
 
 interface StartupSubmission {
   id: string;
@@ -67,7 +72,6 @@ export default function AnalysisDetailPage() {
     try {
       setLoading(true);
 
-      // Fetch submission
       const { data: submissionData, error: submissionError } = await supabase
         .from('startup_submissions')
         .select('*')
@@ -76,7 +80,6 @@ export default function AnalysisDetailPage() {
 
       if (submissionError) throw submissionError;
 
-      // Fetch analysis
       const { data: analysisData, error: analysisError } = await supabase
         .from('stage_analysis_results')
         .select('*')
@@ -99,8 +102,6 @@ export default function AnalysisDetailPage() {
 
   const triggerAnalysis = async () => {
     try {
-      // This would trigger an AI analysis
-      // For now, we'll create a mock analysis
       const mockAnalysis: StageAnalysisResult = {
         id: crypto.randomUUID(),
         submission_id: submissionId,
@@ -127,14 +128,16 @@ export default function AnalysisDetailPage() {
   };
 
   const determineStage = (sub: StartupSubmission): string => {
-    if ((sub.monthly_revenue || 0) > 100000) return 'growth';
-    if ((sub.monthly_revenue || 0) > 10000) return 'series_a';
-    if ((sub.monthly_revenue || 0) > 0) return 'seed';
+    const revenue = sub.monthly_revenue ?? 0;
+    if (revenue > 100000) return 'growth';
+    if (revenue > 10000) return 'series_a';
+    if (revenue > 0) return 'seed';
     return 'pre_seed';
   };
 
   const generateSummary = (sub: StartupSubmission): string => {
-    return `${sub.company_name} appears to be in an early growth phase with ${sub.team_size} team members and ${sub.active_customers || 0} active customers. The company shows potential for scaling.`;
+    const customers = sub.active_customers ?? 0;
+    return `${sub.company_name} appears to be in an early growth phase with ${sub.team_size} team members and ${customers} active customers. The company shows potential for scaling.`;
   };
 
   if (loading) {
@@ -161,6 +164,15 @@ export default function AnalysisDetailPage() {
       </div>
     );
   }
+
+  // Güvenli değerler
+  const monthlyRevenue = submission.monthly_revenue ?? 0;
+  const totalFunding = submission.total_funding ?? 0;
+  const burnRate = submission.burn_rate ?? 0;
+  const growthRate = submission.monthly_growth_rate ?? 0;
+  const keyHires = submission.key_hires ?? 0;
+  const activeCustomers = submission.active_customers ?? 0;
+  const marketSize = submission.market_size ?? 0;
 
   return (
     <div className="space-y-6">
@@ -195,11 +207,11 @@ export default function AnalysisDetailPage() {
             </div>
             <div>
               <div className="text-sm text-gray-500">Key Hires</div>
-              <div className="text-lg font-medium">{submission.key_hires || 0}</div>
+              <div className="text-lg font-medium">{keyHires}</div>
             </div>
             <div>
               <div className="text-sm text-gray-500">Active Customers</div>
-              <div className="text-lg font-medium">{(submission.active_customers || 0).toLocaleString()}</div>
+              <div className="text-lg font-medium">{activeCustomers.toLocaleString()}</div>
             </div>
           </div>
         </CardContent>
@@ -214,19 +226,19 @@ export default function AnalysisDetailPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <div className="text-sm text-gray-500">Monthly Revenue</div>
-              <div className="text-lg font-medium">{formatCurrency(submission.monthly_revenue || 0)}</div>
+              <div className="text-lg font-medium">{formatCurrency(monthlyRevenue)}</div>
             </div>
             <div>
               <div className="text-sm text-gray-500">Total Funding</div>
-              <div className="text-lg font-medium">{formatCurrency(submission.total_funding || 0)}</div>
+              <div className="text-lg font-medium">{formatCurrency(totalFunding)}</div>
             </div>
             <div>
               <div className="text-sm text-gray-500">Burn Rate</div>
-              <div className="text-lg font-medium">{formatCurrency(submission.burn_rate || 0)}/mo</div>
+              <div className="text-lg font-medium">{formatCurrency(burnRate)}/mo</div>
             </div>
             <div>
               <div className="text-sm text-gray-500">Growth Rate</div>
-              <div className="text-lg font-medium">{submission.monthly_growth_rate || 0}%</div>
+              <div className="text-lg font-medium">{growthRate}%</div>
             </div>
           </div>
 
@@ -281,47 +293,10 @@ export default function AnalysisDetailPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Summary */}
             {analysis.analysis_summary && (
               <div>
                 <h3 className="font-medium text-gray-900 mb-2">Summary</h3>
                 <p className="text-gray-700">{analysis.analysis_summary}</p>
-              </div>
-            )}
-
-            {/* Strengths */}
-            {analysis.strengths && analysis.strengths.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">Strengths</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {analysis.strengths.map((strength, index) => (
-                    <li key={index} className="text-gray-700">{strength}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Weaknesses */}
-            {analysis.weaknesses && analysis.weaknesses.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">Areas for Improvement</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {analysis.weaknesses.map((weakness, index) => (
-                    <li key={index} className="text-gray-700">{weakness}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Recommendations */}
-            {analysis.recommendations && analysis.recommendations.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">Recommendations</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {analysis.recommendations.map((recommendation, index) => (
-                    <li key={index} className="text-gray-700">{recommendation}</li>
-                  ))}
-                </ul>
               </div>
             )}
           </CardContent>
@@ -332,9 +307,6 @@ export default function AnalysisDetailPage() {
             <CardTitle>Stage Analysis</CardTitle>
           </CardHeader>
           <CardContent className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
             <p className="text-gray-500 mb-4">Analysis not yet generated</p>
             <Button onClick={triggerAnalysis}>Generate Analysis</Button>
           </CardContent>
@@ -342,7 +314,7 @@ export default function AnalysisDetailPage() {
       )}
 
       {/* Market Information */}
-      {(submission.target_market || submission.market_size) && (
+      {(submission.target_market || marketSize > 0) && (
         <Card>
           <CardHeader>
             <CardTitle>Market Information</CardTitle>
@@ -354,10 +326,10 @@ export default function AnalysisDetailPage() {
                 <div className="text-gray-700">{submission.target_market}</div>
               </div>
             )}
-            {submission.market_size && (
+            {marketSize > 0 && (
               <div>
                 <div className="text-sm text-gray-500">Total Addressable Market</div>
-                <div className="text-lg font-medium">{formatCurrency(submission.market_size || 0)}</div>
+                <div className="text-lg font-medium">{formatCurrency(marketSize)}</div>
               </div>
             )}
           </CardContent>
