@@ -5,6 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// FORMAT FONKSİYONLARI - BUNLAR OLMADAN BUILD HATA VERİR!
+export function formatCurrency(amount: number): string {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return '$0';
+  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 export function formatDate(date: string | Date): string {
   const d = new Date(date);
   const now = new Date();
@@ -44,7 +57,7 @@ export function getStartupStageColor(stage: string): string {
     'ipo': 'bg-indigo-100 text-indigo-800',
   };
 
-  return stageColors[stage.toLowerCase()] || 'bg-gray-100 text-gray-800';
+  return stageColors[stage?.toLowerCase()] || 'bg-gray-100 text-gray-800';
 }
 
 export function getConfidenceScoreColor(score: number): string {
@@ -86,15 +99,6 @@ export function calculateRunway(
   }
   
   return { months: runwayMonths, status };
-}
-
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
 }
 
 export function formatNumber(num: number): string {
