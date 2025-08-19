@@ -1,34 +1,27 @@
-// ✅ layout dosyaları client değil, server component olduğu için "use client" eklenmez
-import './globals.css'
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import ClientAuthProvider from './ClientAuthProvider'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { ClientAuthProvider } from './ClientAuthProvider';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Rating Sistemi',
-  description: 'Girişimci ve yatırımcı değerlendirme platformu',
-}
+  title: 'Rate My Startup',
+  description: 'AI-powered startup stage analysis',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="tr">
+    <html lang="en">
       <body className={inter.className}>
-        {/* 🔍 Debug log için test */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `console.log("🌱 RootLayout yüklendi");`,
-          }}
-        />
         <ClientAuthProvider>
           {children}
         </ClientAuthProvider>
       </body>
     </html>
-  )
+  );
 }
