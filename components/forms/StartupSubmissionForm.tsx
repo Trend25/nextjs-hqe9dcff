@@ -607,7 +607,7 @@ export default function StartupSubmissionForm() {
                     className="rounded border-gray-300"
                   />
                   <label htmlFor="is_operationally_profitable" className="text-sm">
-                    We are operationally profitable (revenue > costs)
+                    We are operationally profitable (revenue exceeds costs)
                   </label>
                 </div>
 
