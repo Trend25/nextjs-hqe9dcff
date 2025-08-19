@@ -2,186 +2,66 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { User, Session } from '@supabase/supabase-js';
-import { useRouter } from 'next/navigation';
-
-interface UserProfile {
-  id: string;
-  email: string;
-  full_name?: string;
-  company_name?: string;
-  role?: string;
-  onboarding_completed?: boolean;
-}
+import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  userProfile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<any>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  session: null,
-  userProfile: null,
   loading: true,
-  signIn: async () => {},
-  signUp: async () => {},
   signOut: async () => {},
 });
 
-export default function ClientAuthProvider({ children }: { children: React.ReactNode }) {
+export function ClientAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
-  const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
+    // Get initial user
+    const getUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Fetch user profile if user exists
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (profile) {
-            setUserProfile(profile);
-          }
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
       } catch (error) {
-        console.error('Error checking user:', error);
+        console.error('Error getting user:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkUser();
+    getUser();
 
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-        setSession(session);
+      (event, session) => {
         setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Fetch user profile on auth change
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (profile) {
-            setUserProfile(profile);
-          }
-        } else {
-          setUserProfile(null);
-        }
-        
-        if (event === 'SIGNED_IN') {
-          router.push('/dashboard');
-        } else if (event === 'SIGNED_OUT') {
-          router.push('/auth/login');
-        }
+        setLoading(false);
       }
     );
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, router]);
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return { data: null, error: error.message };
-      }
-
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message || 'An error occurred during sign in' };
-    }
-  };
-
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-          data: {
-            full_name: fullName,
-          }
-        }
-      });
-
-      if (error) {
-        return { data: null, error: error.message };
-      }
-
-      // Create user profile after successful signup
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: fullName,
-            onboarding_completed: false
-          });
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-        }
-      }
-
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message || 'An error occurred during sign up' };
-    }
-  };
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
       setUser(null);
-      setSession(null);
-      setUserProfile(null);
-      router.push('/auth/login');
+      // Force redirect
+      window.location.href = '/';
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Sign out error:', error);
+      // Force redirect even on error
+      window.location.href = '/';
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      userProfile,
-      loading, 
-      signIn, 
-      signUp, 
-      signOut 
-    }}>
+    <AuthContext.Provider value={{ user, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -190,7 +70,7 @@ export default function ClientAuthProvider({ children }: { children: React.React
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within ClientAuthProvider');
   }
   return context;
 };
