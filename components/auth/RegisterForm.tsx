@@ -20,7 +20,7 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const { signUp } = useAuth();
   const router = useRouter();
 
@@ -63,18 +63,15 @@ export default function RegisterForm() {
     try {
       const { data, error: signUpError } = await signUp(
         formData.email,
-        formData.password,
-        formData.fullName
+        formData.password
       );
-      
+
       if (signUpError) {
         setError(signUpError);
       } else if (data?.user) {
         if (data.user.email_confirmed_at) {
-          // Email already confirmed (shouldn't happen with new signups)
           router.push('/dashboard');
         } else {
-          // Email confirmation needed
           setSuccess('Registration successful! Please check your email to verify your account.');
         }
       }
@@ -88,7 +85,6 @@ export default function RegisterForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2">
             <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -105,7 +101,7 @@ export default function RegisterForm() {
               Get started with your startup analysis journey
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             {error && (
               <Alert variant="destructive" className="mb-6">
@@ -114,8 +110,8 @@ export default function RegisterForm() {
             )}
 
             {success && (
-              <Alert variant="success" className="mb-6">
-                <AlertDescription>{success}</AlertDescription>
+              <Alert className="mb-6 border-green-200 bg-green-50">
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
               </Alert>
             )}
 
@@ -181,10 +177,10 @@ export default function RegisterForm() {
               </div>
 
               <div className="flex items-start space-x-2 text-sm">
-                <input 
-                  type="checkbox" 
-                  id="terms" 
-                  required 
+                <input
+                  type="checkbox"
+                  id="terms"
+                  required
                   className="mt-1"
                   disabled={isLoading}
                 />
@@ -200,9 +196,9 @@ export default function RegisterForm() {
                 </label>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11" 
+              <Button
+                type="submit"
+                className="w-full h-11"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -219,8 +215,8 @@ export default function RegisterForm() {
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Already have an account?{' '}
-                <Link 
-                  href="/auth/login" 
+                <Link
+                  href="/auth/login"
                   className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
                 >
                   Sign in
@@ -228,7 +224,6 @@ export default function RegisterForm() {
               </p>
             </div>
 
-            {/* Social Signup Options */}
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -240,12 +235,11 @@ export default function RegisterForm() {
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="h-11"
                   disabled={isLoading}
                   onClick={() => {
-                    // Google OAuth implementation would go here
                     setError('Social signup coming soon!');
                   }}
                 >
@@ -257,13 +251,12 @@ export default function RegisterForm() {
                   </svg>
                   Google
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   className="h-11"
                   disabled={isLoading}
                   onClick={() => {
-                    // GitHub OAuth implementation would go here
                     setError('Social signup coming soon!');
                   }}
                 >
@@ -282,7 +275,7 @@ export default function RegisterForm() {
             🚀 <strong>What happens next?</strong>
           </p>
           <p className="mt-1">
-            After registration, you'll complete a quick onboarding to set up your startup profile 
+            After registration, you'll complete a quick onboarding to set up your startup profile
             and get your first stage analysis!
           </p>
         </div>
