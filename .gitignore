@@ -1,1 +1,14 @@
+# Node modules
 node_modules
+
+# Environment files (GÜVENLİK!)
+.env.local
+.env*.local
+
+# Supabase
+.supabase
+
+# Logs & temp files
+*.log
+.DS_Store
+Thumbs.db
