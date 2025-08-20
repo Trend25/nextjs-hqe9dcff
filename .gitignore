@@ -1,14 +1,58 @@
-# Node modules
+# Dependencies
 node_modules
+/node_modules
+/.pnp
+.pnp.js
 
-# Environment files (GÜVENLİK!)
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files (SECURITY - VERY IMPORTANT!)
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env*.local
+
+# Vercel
+.vercel
 
 # Supabase
 .supabase
 
-# Logs & temp files
+# Additional Security
 *.log
+*.pid
+*.seed
+*.pid.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
