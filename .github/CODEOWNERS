@@ -1,6 +1,3 @@
-# Varsayılan: her şeye sen bak
 *       @Trend25
-
-# Örnek kritik yollar
 /app/auth/*   @Trend25
 /app/utils/*  @Trend25
