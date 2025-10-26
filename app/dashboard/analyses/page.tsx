@@ -31,7 +31,7 @@ interface StageAnalysisResult {
 
 function AnalysesContent() {
   const searchParams = useSearchParams();
-  const newSubmissionId = searchParams.get('new_submission');
+  const newSubmissionId = searchParams?.get?.('new_submission') ?? null;
   
   const [user, setUser] = useState<User | null>(null);
   const [submissions, setSubmissions] = useState<StartupSubmission[]>([]);
