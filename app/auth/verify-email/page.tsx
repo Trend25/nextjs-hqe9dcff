@@ -15,6 +15,7 @@ function VerifyEmailContent() {
     const verifyEmail = async () => {
       try {
         // Get token and type from URL params
+
         const token = searchParams?.get?.('token') ?? null;
         const type = searchParams?.get?.('type') ?? null;
 
