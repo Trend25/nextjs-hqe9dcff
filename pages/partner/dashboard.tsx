@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 import { fetchPartnerAnalytics } from '../../lib/partnerAnalytics';
+import { getMockSession, requireRole } from '../../lib/authGate';
 
 export default function PartnerDashboardPage() {
   const router = useRouter();
@@ -14,12 +15,23 @@ export default function PartnerDashboardPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    // prefer query param, fallback to localStorage (mock)
+    const session = getMockSession();
+    // TODO: gerçek partner auth eklendiğinde Supabase session'dan org_id alınacak
+    // TODO: production ortamında RLS + token check aktif olacak
+    // TODO: staging'de sadece mock role çalışır
+    const hasAccess = requireRole(session, ["partner"]);
+    
+    if (!hasAccess) {
+      setErrorMsg("Erişim reddedildi: sadece partner kullanıcılar için.");
+      setLoading(false);
+      return;
+    }
+
+    // prefer query param, fallback to session org_id
     if (queryOrg) {
       setOrgId(queryOrg);
-    } else if (typeof window !== 'undefined') {
-      const fromLs = localStorage.getItem('org_id');
-      setOrgId(fromLs || null);
+    } else if (session.org_id) {
+      setOrgId(session.org_id);
     }
   }, [queryOrg]);
 
