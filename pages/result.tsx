@@ -8,6 +8,8 @@ import {
   calcDCF,
   aggregateValuation,
 } from '../lib/engine';
+import { getSupabaseClient } from '../lib/supabaseClient';
+import { recordEvaluationAnalytics } from '../lib/analytics';
 
 type Detail = { method: string; value: number };
 
@@ -17,6 +19,7 @@ export default function ResultPage() {
   const [composite, setComposite] = useState<{ min: number; target: number; max: number } | null>(null);
   const [details, setDetails] = useState<Detail[]>([]);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [analyticsDone, setAnalyticsDone] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -50,15 +53,51 @@ export default function ResultPage() {
     });
 
     const comp = aggregateValuation(results);
-    setDetails(results);
-    setComposite(comp);
-    setLoading(false);
+  setDetails(results);
+  setComposite(comp);
+  setLoading(false);
 
     // TODO: PDF export sadece ücretli planda aktif olacak
     // TODO: Partner dashboard için bu sonucu org_id altında raporla
     // TODO: Admin dashboard bu sonucu aggregate olarak görebilmeli
     // TODO: analytics_evaluations tablosuna anonim olarak yaz (consent_flag kontrolü ile)
   }, [router.query]);
+
+  // When composite is available, send a best-effort analytics event to staging
+  useEffect(() => {
+    if (!composite) return;
+    if (analyticsDone) return;
+
+    const q = router.query;
+    const stageFromQuery = typeof q.stage === 'string' ? q.stage : (q.stage && q.stage[0]) || '';
+
+    const payload = {
+      org_id: q.org_id ? (Array.isArray(q.org_id) ? String(q.org_id[0]) : String(q.org_id)) : null,
+      stage: stageFromQuery,
+      sector: q.sector ? (Array.isArray(q.sector) ? String(q.sector[0]) : String(q.sector)) : null,
+      composite_min: composite.min,
+      composite_target: composite.target,
+      composite_max: composite.max,
+      consent_flag: q.consent === '1' ? true : false,
+    };
+
+    // TODO: consent_flag === false ise partner dashboard'da bu sonuç görünmemeli
+    // TODO: Admin dashboard total evaluation count bu tablodan gelecek
+    // TODO: Production ortamında bu insert backend API route üzerinden yapılacak (doğrudan client değil)
+
+    try {
+      const supabase = getSupabaseClient();
+      // NOTE: This may return null if env not configured (staging-only). Do not throw.
+      // TODO: Production keys must NOT be used here.
+      // Best-effort call; do not block UI.
+      recordEvaluationAnalytics(supabase, payload).finally(() => {
+        setAnalyticsDone(true);
+      });
+    } catch (e) {
+      // swallow any sync errors
+      setAnalyticsDone(true);
+    }
+  }, [composite, analyticsDone, router.query]);
 
   return (
     <div className="min-h-screen p-4 bg-gray-50 flex items-start justify-center">
@@ -92,6 +131,10 @@ export default function ResultPage() {
         <button className="rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium w-full disabled:bg-gray-300" disabled>
           PDF indir (Premium)
         </button>
+
+        {analyticsDone && (
+          <div className="text-[10px] text-gray-400">analytics recorded (staging)</div>
+        )}
       </div>
     </div>
   );

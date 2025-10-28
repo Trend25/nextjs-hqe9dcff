@@ -1,49 +1,24 @@
-// Mock Supabase client helper for local/dev usage only.
-// IMPORTANT: Do NOT import or use production Supabase keys here.
-// This file intentionally returns mock responses and logs actions.
+// NOT: This client is for staging/preview usage only.
+// TODO: production URL/KEY asla buraya yazılmamalı.
+// TODO: analytics insert'i backend route üzerinden proxy'le.
+import { createClient } from '@supabase/supabase-js';
 
-export type DraftEvaluation = {
-  stage: string;
-  methods: string[];
-  formData: {
-    startupName: string;
-    sector: string;
-    mrr: string;
-    growthRate: string;
-    teamSize: string;
-  };
-};
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || null;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || null;
 
-// TODO: staging Supabase insert to evaluations (RLS will apply in prod)
-// TODO: if consent_flag === false do NOT write to analytics
-export async function saveDraftEvaluation(payload: any): Promise<{ status: string }> {
-  // In real code: insert into `evaluations` table with RLS and org/user scoping.
-  // TODO: org_id bilgisini kullanıcı oturumundan bağla
-  console.log('[mock supabase] saveDraftEvaluation payload:', JSON.stringify(payload, null, 2));
+export function getSupabaseClient() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return null;
+  }
 
-  // Simulate async latency
-  await new Promise((r) => setTimeout(r, 50));
-
-  // Return a mock success response
-  return { status: 'ok' };
-}
-
-// TODO: fetch latest draft from Supabase for this user/org
-export async function loadLastDraft(): Promise<DraftEvaluation | null> {
-  // Return a fake draft for local development/demo purposes
-  await new Promise((r) => setTimeout(r, 30));
-
-  return {
-    stage: 'mvp',
-    methods: ['berkus', 'scorecard'],
-    formData: {
-      startupName: 'Demo Startup',
-      sector: 'SaaS',
-      mrr: '1200',
-      growthRate: '15',
-      teamSize: '4',
+  // Staging anon client. RLS varsayıyoruz.
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
     },
-  };
+  });
 }
 
-export default { saveDraftEvaluation, loadLastDraft };
+// TODO: production ortamında service role key KULLANILMAYACAK.
+// TODO: analytics insert'i backend route üzerinden proxy'le.
+
