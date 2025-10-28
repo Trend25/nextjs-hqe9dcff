@@ -3,9 +3,8 @@
 // TODO: Abuse takibi (şüpheli kullanım) burada görünecek ama şu anda sadece TODO.
 
 import React, { useEffect, useState } from 'react';
-import { getSupabaseClient } from '../../lib/supabaseClient';
-import { fetchAdminSummary, AdminSummary } from '../../lib/adminAnalytics';
-import { getMockSession, requireRole } from '../../lib/authGate';
+import { getMockSession } from '../../lib/authGate';
+import type { AdminSummary } from '../../lib/adminSummary';
 
 export default function AdminDashboard(): JSX.Element {
   const [loading, setLoading] = useState(true);
@@ -13,42 +12,41 @@ export default function AdminDashboard(): JSX.Element {
   const [summary, setSummary] = useState<AdminSummary | null>(null);
 
   useEffect(() => {
+    // Double protection: component seviyesinde de auth kontrolü
     const session = getMockSession();
-    // TODO: production'da backend proxy route kullanılacak
-    // TODO: Supabase service key KULLANILMAYACAK
-    // TODO: staging-only mock auth
-    const hasAccess = requireRole(session, ["admin"]);
-
-    if (!hasAccess) {
+    if (session.role !== "admin") {
       setErrorMsg("Erişim reddedildi: sadece admin kullanıcılar için.");
       setLoading(false);
       return;
     }
 
-    let mounted = true;
+    async function fetchSummary() {
+      try {
+        const response = await fetch("/api/admin/summary");
+        
+        if (response.status === 403) {
+          setErrorMsg("Erişim reddedildi: sadece admin kullanıcılar için.");
+          setLoading(false);
+          return;
+        }
 
-    async function load() {
-      const supabase = getSupabaseClient();
-      const res = await fetchAdminSummary(supabase as any);
-
-      if (!mounted) return;
-
-      if (res.error === 'no_client') {
-        setErrorMsg('Veri alınamadı (staging offline)');
-      } else if (res.error === 'query_failed') {
-        setErrorMsg('Sorgu başarısız (staging)');
-      } else if (res.summary) {
-        setSummary(res.summary);
+        const json = await response.json();
+        
+        if (json.warning === "staging offline") {
+          setErrorMsg("Veri alınamadı (staging offline)");
+        } else if (json.summary) {
+          setSummary(json.summary);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.warn('Error fetching admin summary:', error);
+        setErrorMsg("Veri alınamadı (staging offline)");
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
-    load();
-
-    return () => {
-      mounted = false;
-    };
+    fetchSummary();
   }, []);
 
   return (
