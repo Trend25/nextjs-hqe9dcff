@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 import { fetchAdminSummary, AdminSummary } from '../../lib/adminAnalytics';
+import { getMockSession, requireRole } from '../../lib/authGate';
 
 export default function AdminDashboard(): JSX.Element {
   const [loading, setLoading] = useState(true);
@@ -12,6 +13,18 @@ export default function AdminDashboard(): JSX.Element {
   const [summary, setSummary] = useState<AdminSummary | null>(null);
 
   useEffect(() => {
+    const session = getMockSession();
+    // TODO: production'da backend proxy route kullanılacak
+    // TODO: Supabase service key KULLANILMAYACAK
+    // TODO: staging-only mock auth
+    const hasAccess = requireRole(session, ["admin"]);
+
+    if (!hasAccess) {
+      setErrorMsg("Erişim reddedildi: sadece admin kullanıcılar için.");
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
 
     async function load() {
