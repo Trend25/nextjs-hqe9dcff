@@ -242,3 +242,4 @@ If this project helped you, please consider:
 
 *Empowering entrepreneurs with AI-driven insights to build better startups.*
 // temporary change for PR
+NOTE: session-aware role gating + /api/session(/verify) added in staging; prod secrets not committed; RLS enforcement TODO.
