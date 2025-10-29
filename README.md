@@ -241,3 +241,4 @@ If this project helped you, please consider:
 **Built with ❤️ for the startup community**
 
 *Empowering entrepreneurs with AI-driven insights to build better startups.*
+// temporary change for PR
