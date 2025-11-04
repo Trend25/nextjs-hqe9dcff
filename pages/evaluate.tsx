@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { saveDraftEvaluation, loadLastDraft } from '../lib/supabaseClient';
-
+//import { saveDraftEvaluation, loadLastDraft } from '../lib/supabaseClient';
+import { loadLastDraft } from '../lib/supabaseClient';
+// UAT build: saveDraftEvaluation kaldırıldı (v0.5 kapsamı)
 type StatusMsg = { type: 'error' | 'success' | null; text: string };
 
 export default function EvaluatePage() {
@@ -67,12 +68,10 @@ export default function EvaluatePage() {
     };
 
     try {
-      const res = await saveDraftEvaluation(payload);
-      if (res && (res as any).status === 'ok') {
-        setStatusMsg({ type: 'success', text: 'Taslak kaydedildi' });
-      } else {
-        setStatusMsg({ type: 'error', text: 'Kaydederken hata oluştu' });
-      }
+      // UAT build: saveDraftEvaluation devre dışı (v0.5 sonrası geri alınacak)
+    console.warn('UAT build: saveDraftEvaluation() disabled. Payload:', payload);
+    setStatusMsg({ type: 'success', text: 'Taslak kaydetme UAT build’de devre dışı.' });
+// TODO(v0.5): saveDraftEvaluation(payload) geri eklenecek.
     } catch (e) {
       setStatusMsg({ type: 'error', text: 'Kaydederken hata oluştu' });
     }
