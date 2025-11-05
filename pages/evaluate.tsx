@@ -1,8 +1,18 @@
+// pages/evaluate.tsx
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-//import { saveDraftEvaluation, loadLastDraft } from '../lib/supabaseClient';
-import { loadLastDraft } from '../lib/supabaseClient';
-// UAT build: saveDraftEvaluation kaldırıldı (v0.5 kapsamı)
+
+// UAT build stub: v0.5 kapsamında Supabase draft yükleme/kaydetme kapalı.
+// Prod/v0.5’te gerçek implementasyona geri dönülecek.
+async function loadLastDraft(): Promise<null | {
+  stage: string;
+  methods?: string[];
+  formData?: any;
+}> {
+  console.warn('UAT build: loadLastDraft() disabled');
+  return null;
+}
+
 type StatusMsg = { type: 'error' | 'success' | null; text: string };
 
 export default function EvaluatePage() {
@@ -28,7 +38,7 @@ export default function EvaluatePage() {
         if (d) {
           setStage(d.stage);
           setMethods(d.methods || []);
-          setFormData({ ...formData, ...d.formData });
+          setFormData((prev) => ({ ...prev, ...(d.formData || {}) }));
           setStatusMsg({ type: 'success', text: 'Taslak yüklendi' });
         }
       })
@@ -38,7 +48,6 @@ export default function EvaluatePage() {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stages = ['idea', 'mvp', 'seed', 'growth'];
@@ -69,10 +78,10 @@ export default function EvaluatePage() {
 
     try {
       // UAT build: saveDraftEvaluation devre dışı (v0.5 sonrası geri alınacak)
-    console.warn('UAT build: saveDraftEvaluation() disabled. Payload:', payload);
-    setStatusMsg({ type: 'success', text: 'Taslak kaydetme UAT build’de devre dışı.' });
-// TODO(v0.5): saveDraftEvaluation(payload) geri eklenecek.
-    } catch (e) {
+      console.warn('UAT build: saveDraftEvaluation() disabled. Payload:', payload);
+      setStatusMsg({ type: 'success', text: 'Taslak kaydetme UAT build’de devre dışı.' });
+      // TODO(v0.5): saveDraftEvaluation(payload) geri eklenecek.
+    } catch {
       setStatusMsg({ type: 'error', text: 'Kaydederken hata oluştu' });
     }
   };
@@ -170,7 +179,7 @@ export default function EvaluatePage() {
                 Geri
               </button>
               <button
-                className="rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium disabled:bg-gray-300"
+                className="rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium"
                 onClick={() => setStep(3)}
                 disabled={methods.length < 2}
               >
