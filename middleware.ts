@@ -1,13 +1,10 @@
-// middleware.ts — Route Protection + UAT whitelist (Preview/Staging)
+// middleware.ts — UAT / Preview ortamı için güvenli bypass + normal koruma
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
-/**
- * UAT/Preview (Vercel Preview veya NEXT_PUBLIC_APP_ENV=staging) için
- * auth kapısının dışına alınacak public rotalar.
- */
+// 👇 UAT / Preview ortamında auth kontrolü dışında bırakılacak sayfalar
 const UAT_PUBLIC_PATHS = [
   '/', '/auth', '/invite',
   '/evaluate', '/result',
@@ -22,21 +19,20 @@ function isPublicPath(pathname: string) {
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
-  // UAT whitelist: Vercel Preview ortamında veya staging flag'i varken
-  // public sayfaları doğrudan geçir.
+  // ✅ 1. Eğer ortam staging/preview ise public pathleri tamamen serbest bırak
   const isPreviewEnv =
     process.env.NEXT_PUBLIC_APP_ENV === 'staging' ||
     process.env.VERCEL_ENV === 'preview';
 
   if (isPreviewEnv && isPublicPath(pathname)) {
+    // Bypass auth entirely for UAT/staging
     return NextResponse.next();
   }
 
-  // --- Aşağıdan itibaren mevcut tam koruma kural setin ---
+  // ✅ 2. Normal üretim kuralları (auth zorunlu sayfalar)
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
-  // Get the session
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -45,7 +41,6 @@ export async function middleware(req: NextRequest) {
   const isAuthenticated = !!user;
   const isEmailVerified = user?.email_confirmed_at != null;
 
-  // Define route protection rules
   const protectedRoutes = [
     '/form',
     '/stage-detection',
@@ -79,14 +74,12 @@ export async function middleware(req: NextRequest) {
   const needsAuth = protectedRoutes.some((route) => currentPath.startsWith(route));
 
   if (needsAuth) {
-    // Redirect unauthenticated users to login
     if (!isAuthenticated) {
       const loginUrl = new URL('/auth/login', req.url);
       loginUrl.searchParams.set('redirect', currentPath);
       return NextResponse.redirect(loginUrl);
     }
 
-    // Check email verification for specific routes
     const needsEmailVerification = emailVerificationRequiredRoutes.some((route) =>
       currentPath.startsWith(route),
     );
@@ -96,56 +89,6 @@ export async function middleware(req: NextRequest) {
       verifyUrl.searchParams.set('redirect', currentPath);
       return NextResponse.redirect(verifyUrl);
     }
-
-    // Check if user has completed onboarding for main app routes
-    const mainAppRoutes = ['/form', '/stage-detection', '/results'];
-    const needsOnboarding = mainAppRoutes.some((route) => currentPath.startsWith(route));
-
-    if (needsOnboarding && isAuthenticated && isEmailVerified) {
-      try {
-        // Check if user profile is complete
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('onboarding_completed, role, company_name')
-          .eq('id', user.id)
-          .single();
-
-        if (!profile?.onboarding_completed) {
-          const onboardingUrl = new URL('/onboarding', req.url);
-          onboardingUrl.searchParams.set('redirect', currentPath);
-          return NextResponse.redirect(onboardingUrl);
-        }
-      } catch (error) {
-        console.error('Error checking user profile:', error);
-        // If there's an error, redirect to onboarding to be safe
-        const onboardingUrl = new URL('/onboarding', req.url);
-        return NextResponse.redirect(onboardingUrl);
-      }
-    }
-  }
-
-  // Special handling for root path
-  if (currentPath === '/') {
-    if (isAuthenticated && isEmailVerified) {
-      try {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single();
-
-        if (profile?.onboarding_completed) {
-          return NextResponse.redirect(new URL('/dashboard', req.url));
-        } else {
-          return NextResponse.redirect(new URL('/onboarding', req.url));
-        }
-      } catch {
-        // If error, let them stay on landing page
-        return res;
-      }
-    }
-    // Unauthenticated users stay on landing page
-    return res;
   }
 
   return res;
@@ -153,12 +96,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all request paths except for the ones starting with:
-    // - api (API routes)
-    // - _next/static (static files)
-    // - _next/image (image optimization files)
-    // - favicon.ico (favicon file)
-    // - public folder
     '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
   ],
 };
