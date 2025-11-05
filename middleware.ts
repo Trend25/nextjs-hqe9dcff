@@ -1,10 +1,38 @@
-// middleware.ts - Route Protection for Full Implementation
+// middleware.ts — Route Protection + UAT whitelist (Preview/Staging)
 
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+
+/**
+ * UAT/Preview (Vercel Preview veya NEXT_PUBLIC_APP_ENV=staging) için
+ * auth kapısının dışına alınacak public rotalar.
+ */
+const UAT_PUBLIC_PATHS = [
+  '/', '/auth', '/invite',
+  '/evaluate', '/result',
+  '/api/session/verify',
+  '/favicon.ico', '/robots.txt'
+];
+
+function isPublicPath(pathname: string) {
+  return UAT_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 export async function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname;
+
+  // UAT whitelist: Vercel Preview ortamında veya staging flag'i varken
+  // public sayfaları doğrudan geçir.
+  const isPreviewEnv =
+    process.env.NEXT_PUBLIC_APP_ENV === 'staging' ||
+    process.env.VERCEL_ENV === 'preview';
+
+  if (isPreviewEnv && isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // --- Aşağıdan itibaren mevcut tam koruma kural setin ---
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
@@ -19,29 +47,27 @@ export async function middleware(req: NextRequest) {
 
   // Define route protection rules
   const protectedRoutes = [
-    // '/dashboard',     // ← REMOVED: Let client-side handle dashboard auth
     '/form',
-    '/stage-detection', 
+    '/stage-detection',
     '/results',
     '/profile',
-    '/settings'
+    '/settings',
   ];
 
   const authRoutes = [
     '/auth/login',
     '/auth/register',
     '/auth/forgot-password',
-    '/auth/reset-password'
+    '/auth/reset-password',
   ];
 
   const emailVerificationRequiredRoutes = [
     '/form',
     '/stage-detection',
     '/results',
-    // '/dashboard'      // ← REMOVED: Client-side will handle this
   ];
 
-  const currentPath = req.nextUrl.pathname;
+  const currentPath = pathname;
 
   // Redirect authenticated users away from auth pages
   if (isAuthenticated && authRoutes.includes(currentPath)) {
@@ -50,9 +76,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Check if route needs authentication
-  const needsAuth = protectedRoutes.some(route => 
-    currentPath.startsWith(route)
-  );
+  const needsAuth = protectedRoutes.some((route) => currentPath.startsWith(route));
 
   if (needsAuth) {
     // Redirect unauthenticated users to login
@@ -63,8 +87,8 @@ export async function middleware(req: NextRequest) {
     }
 
     // Check email verification for specific routes
-    const needsEmailVerification = emailVerificationRequiredRoutes.some(route =>
-      currentPath.startsWith(route)
+    const needsEmailVerification = emailVerificationRequiredRoutes.some((route) =>
+      currentPath.startsWith(route),
     );
 
     if (needsEmailVerification && !isEmailVerified) {
@@ -74,10 +98,8 @@ export async function middleware(req: NextRequest) {
     }
 
     // Check if user has completed onboarding for main app routes
-    const mainAppRoutes = ['/form', '/stage-detection', '/results']; // ← REMOVED dashboard
-    const needsOnboarding = mainAppRoutes.some(route => 
-      currentPath.startsWith(route)
-    );
+    const mainAppRoutes = ['/form', '/stage-detection', '/results'];
+    const needsOnboarding = mainAppRoutes.some((route) => currentPath.startsWith(route));
 
     if (needsOnboarding && isAuthenticated && isEmailVerified) {
       try {
@@ -105,7 +127,6 @@ export async function middleware(req: NextRequest) {
   // Special handling for root path
   if (currentPath === '/') {
     if (isAuthenticated && isEmailVerified) {
-      // Check if onboarding is complete
       try {
         const { data: profile } = await supabase
           .from('user_profiles')
@@ -118,7 +139,7 @@ export async function middleware(req: NextRequest) {
         } else {
           return NextResponse.redirect(new URL('/onboarding', req.url));
         }
-      } catch (error) {
+      } catch {
         // If error, let them stay on landing page
         return res;
       }
@@ -132,14 +153,12 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
+    // Match all request paths except for the ones starting with:
+    // - api (API routes)
+    // - _next/static (static files)
+    // - _next/image (image optimization files)
+    // - favicon.ico (favicon file)
+    // - public folder
     '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
   ],
 };
