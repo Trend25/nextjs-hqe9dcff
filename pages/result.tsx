@@ -1,104 +1,104 @@
 // pages/result.tsx
-import React, { useMemo } from 'react';
-import { useRouter } from 'next/router';
+import { GetServerSideProps } from 'next';
+import Link from 'next/link';
 
-type Parsed = {
-  stage: string;
-  methods: string[];
-  startupName: string;
-  sector: string;
-  mrr: string;
-  growthRate: string;
-  teamSize: string;
+type ResultProps = {
+  error?: string;
+  startupName?: string;
+  sector?: string;
+  stage?: string;
+  methods?: string[];
+  mrr?: number;
+  growthRate?: number;
+  teamSize?: number;
+  compositeScore?: number; // mock
 };
 
-function parseQuery(q: Record<string, any>): Parsed {
-  const methods = typeof q.methods === 'string' ? q.methods.split(',').filter(Boolean) : [];
+const ALLOWED_STAGES = ['idea','mvp','seed','growth'] as const;
+const ALLOWED_METHODS = ['berkus','scorecard','riskfactor','vcmethod','dcf'] as const;
+type Stage = typeof ALLOWED_STAGES[number];
+
+function parseNumber(v: unknown, {min = 0, max = Number.MAX_SAFE_INTEGER} = {}) {
+  const n = typeof v === 'string' ? Number(v) : NaN;
+  return Number.isFinite(n) && n >= min && n <= max ? n : null;
+}
+
+export const getServerSideProps: GetServerSideProps<ResultProps> = async ({ query, res }) => {
+  const { stage, methods, startupName, sector, mrr, growthRate, teamSize } = query;
+
+  // temel alanlar
+  if (!startupName || !sector || !stage || !methods) {
+    res.statusCode = 400;
+    return { props: { error: 'Eksik parametre(ler). Lütfen sihirbazdan gelin.' } };
+  }
+
+  // stage
+  const stageStr = String(stage);
+  if (!ALLOWED_STAGES.includes(stageStr as Stage)) {
+    res.statusCode = 400;
+    return { props: { error: 'Geçersiz stage parametresi.' } };
+  }
+
+  // methods
+  const methodsArr = String(methods)
+    .split(',')
+    .map(m => m.trim().toLowerCase())
+    .filter(m => ALLOWED_METHODS.includes(m as any));
+  if (methodsArr.length < 1) {
+    res.statusCode = 400;
+    return { props: { error: 'Geçersiz yöntem listesi.' } };
+  }
+
+  // sayısallar
+  const mrrNum        = parseNumber(mrr,        { min: 0 });
+  const growthNum     = parseNumber(growthRate, { min: 0, max: 100 });
+  const teamSizeNum   = parseNumber(teamSize,   { min: 1, max: 10000 });
+
+  if (mrrNum === null || growthNum === null || teamSizeNum === null) {
+    res.statusCode = 400;
+    return { props: { error: 'Sayısal parametreler geçersiz.' } };
+  }
+
+  // UAT: mock bileşik skor (gerçek motor v0.5 ile gelecekti)
+  const compositeScore = Math.round((growthNum/100)*50 + Math.min(50, Math.log10(mrrNum+10)*10));
+
   return {
-    stage: (q.stage as string) || '',
-    methods,
-    startupName: (q.startupName as string) || '',
-    sector: (q.sector as string) || '',
-    mrr: (q.mrr as string) || '',
-    growthRate: (q.growthRate as string) || '',
-    teamSize: (q.teamSize as string) || '',
+    props: {
+      startupName: String(startupName),
+      sector: String(sector),
+      stage: stageStr,
+      methods: methodsArr,
+      mrr: mrrNum,
+      growthRate: growthNum,
+      teamSize: teamSizeNum,
+      compositeScore
+    }
   };
-}
+};
 
-// UAT basit bileşik skor (sadece görsel amaçlı, gerçek motor değil)
-function mockCompositeScore(p: Parsed): number {
-  let base = 50;
-  if (p.stage === 'mvp') base += 5;
-  if (p.stage === 'seed') base += 10;
-  if (p.stage === 'growth') base += 15;
-  base += Math.min(p.methods.length * 3, 12);
-  return Math.max(0, Math.min(100, base));
-}
-
-export default function ResultPage() {
-  const router = useRouter();
-
-  const data = useMemo(() => parseQuery(router.query), [router.query]);
-  const score = useMemo(() => mockCompositeScore(data), [data]);
+export default function ResultPage(props: ResultProps) {
+  if (props.error) {
+    return (
+      <div style={{ padding: 16 }}>
+        <h1>Sonuç Özeti (UAT)</h1>
+        <p>{props.error}</p>
+        <Link href="/evaluate">Değerlendirme sihirbazına dön</Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen p-4 bg-gray-50 flex items-start justify-center">
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm max-w-xl w-full mx-auto flex flex-col gap-4">
-        <h1 className="text-lg font-semibold text-gray-900">Sonuç Özeti (UAT)</h1>
-
-        {!data.startupName || !data.sector ? (
-          <div className="bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-md p-3 text-sm">
-            Eksik parametreler var. Lütfen değerlendirme sihirbazından gelin.
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <div className="text-gray-500">Startup</div>
-                <div className="font-medium">{data.startupName}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Sektör</div>
-                <div className="font-medium">{data.sector}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Aşama</div>
-                <div className="font-medium capitalize">{data.stage || '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Yöntemler</div>
-                <div className="font-medium">{data.methods.join(', ') || '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">MRR</div>
-                <div className="font-medium">{data.mrr || '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Büyüme (%)</div>
-                <div className="font-medium">{data.growthRate || '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Takım Büyüklüğü</div>
-                <div className="font-medium">{data.teamSize || '-'}</div>
-              </div>
-            </div>
-
-            <div className="mt-2">
-              <div className="text-gray-500 text-sm">Bileşik UAT skoru (mock)</div>
-              <div className="text-3xl font-bold">{score}</div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                className="rounded-md border border-gray-300 text-gray-700 bg-white px-4 py-2 text-sm"
-                onClick={() => router.push('/evaluate')}
-              >
-                Geri Dön
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+    <div style={{ padding: 16 }}>
+      <h1>Sonuç Özeti (UAT)</h1>
+      <div>Startup: {props.startupName}</div>
+      <div>Sektör: {props.sector}</div>
+      <div>Aşama: {props.stage}</div>
+      <div>Yöntemler: {props.methods?.join(', ')}</div>
+      <div>MRR: {props.mrr}</div>
+      <div>Büyüme (%): {props.growthRate}</div>
+      <div>Takım Büyüklüğü: {props.teamSize}</div>
+      <div><b>Bileşik UAT skoru (mock)</b><br/>{props.compositeScore}</div>
+      <p><Link href="/evaluate">Geri Dön</Link></p>
     </div>
   );
 }
