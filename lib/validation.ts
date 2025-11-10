@@ -1,0 +1,64 @@
+// lib/validation.ts
+import { z } from "zod";
+
+export const resultQuerySchema = z.object({
+  stage: z.enum(["idea", "mvp", "seed", "growth"]),
+  methods: z
+    .string()
+    .transform((s) =>
+      s
+        .split(",")
+        .map((m) => m.trim())
+        .filter(Boolean)
+    )
+    .refine((arr) => arr.length >= 1, {
+      message: "En az bir yöntem seçmelisiniz",
+    }),
+  startupName: z.string().min(1, "Startup ismi gerekli"),
+  sector: z.string().min(1, "Sektör gerekli"),
+  mrr: z.coerce
+    .number()
+    .nonnegative({ message: "MRR 0 veya üstü olmalıdır" }),
+  growthRate: z.coerce
+    .number()
+    .min(0, "Büyüme >= 0")
+    .max(200, "Büyüme <= 200"),
+  teamSize: z.coerce
+    .number()
+    .int("Takım kişi sayısı tam sayı olmalı")
+    .min(1, "Takım en az 1 kişi")
+    .max(5000, "Takım 5000'i aşamaz"),
+});
+
+export type ResultQuery = z.infer<typeof resultQuerySchema>;
+
+export type RawQuery = Partial<Record<string, string | string[]>>;
+
+export function parseResultQuery(
+  q: RawQuery
+): { ok: true; data: ResultQuery } | { ok: false; errors: string[] } {
+  const pick = (k: string): string => {
+    const v = q[k];
+    if (Array.isArray(v)) return v[0] ?? "";
+    return v ?? "";
+  };
+
+  const candidate = {
+    stage: pick("stage"),
+    methods: pick("methods"),
+    startupName: pick("startupName"),
+    sector: pick("sector"),
+    mrr: pick("mrr"),
+    growthRate: pick("growthRate"),
+    teamSize: pick("teamSize"),
+  };
+
+  const res = resultQuerySchema.safeParse(candidate);
+
+  if (res.success) {
+    return { ok: true, data: res.data };
+  }
+
+  const errors = res.error.issues.map((i) => i.message || "Geçersiz giriş");
+  return { ok: false, errors };
+}
