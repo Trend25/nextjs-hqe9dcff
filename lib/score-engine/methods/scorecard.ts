@@ -1,33 +1,52 @@
 // lib/score-engine/methods/scorecard.ts
 import {
   BaseInput,
-  MethodConfig,
   MethodResult,
   ScorecardConfig,
   Stage,
 } from "../types";
+import { adjustForRunway } from "../runway";
 
+// Stage'e göre çarpan (benchmark'e göre)
 const STAGE_MULTIPLIER: Record<Stage, number> = {
-  idea: 0.5,
+  idea: 0.6,
   mvp: 0.8,
   seed: 1.0,
-  growth: 1.3,
+  growth: 1.2,
 };
 
 export function scorecardValuation(
   input: BaseInput,
-  config: MethodConfig,
+  config: ScorecardConfig,
 ): MethodResult {
-  const sc: ScorecardConfig = config.scorecard;
-  const stageFactor = STAGE_MULTIPLIER[input.stage];
-  const growthFactor = 1 + (input.growthRate ?? 0) / 200;
+  const base = config.basePreMoney;
 
-  const value = Math.round(sc.basePreMoney * stageFactor * growthFactor);
+  // Stage'e göre baz multiplier
+  const stageMult = STAGE_MULTIPLIER[input.stage] ?? 1.0;
+
+  // Basit kalite skoru: MRR, growth, teamSize varlığına göre
+  let qualityScore = 0.4; // minimum
+  if (input.mrr && input.mrr > 0) qualityScore += 0.2;
+  if (input.growthRate && input.growthRate > 0) qualityScore += 0.2;
+  if (input.teamSize && input.teamSize > 0) qualityScore += 0.2;
+  if (qualityScore > 1) qualityScore = 1;
+
+  let value = base * stageMult * qualityScore;
+
+  // Karlılık bilgisini hafifçe dikkate al (profitMargin opsiyonel)
+  if (input.profitMargin != null && !Number.isNaN(input.profitMargin)) {
+    const clamped = Math.max(-30, Math.min(30, input.profitMargin));
+    const marginFactor = 1 + clamped / 300; // -0.1 ile +0.1 arası etki
+    value *= marginFactor;
+  }
+
+  // 🔁 Runway etkisini uygula (nakit ömrü kısa ise indir, uzunsa hafif artır)
+  value = adjustForRunway(value, input);
 
   return {
     method: "scorecard",
-    value,
+    value: Math.round(value),
     notes:
-      "Scorecard metodu — aşama ve büyüme varsayımlarına göre oransal değerleme.",
+      "Scorecard metodu — benchmark pre-money, stage, büyüme, takım ve runway'e göre ayarlanmış skor.",
   };
 }

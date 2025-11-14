@@ -4,10 +4,9 @@ import { useRouter } from "next/router";
 import { parseResultQuery } from "../lib/validation";
 import {
   BaseInput,
-  MethodConfig,
   ValuationMethod,
 } from "../lib/score-engine/types";
-import { evaluateStartup } from "../lib/score-engine";
+import { evaluateStartupWithDefaults } from "../lib/score-engine";
 
 type ViewState =
   | { kind: "loading" }
@@ -21,32 +20,6 @@ type ViewState =
       }[];
       input: BaseInput;
     };
-
-// UAT v0.5 için default, hard-coded config
-const defaultConfig: MethodConfig = {
-  berkus: {
-    ideaMax: 1_000_000,
-    mvpMax: 2_000_000,
-    seedMax: 4_000_000,
-    growthMax: 8_000_000,
-  },
-  scorecard: {
-    basePreMoney: 3_000_000,
-  },
-  riskfactor: {
-    basePreMoney: 3_000_000,
-    perRiskStep: 250_000,
-  },
-  vcmethod: {
-    targetReturnMultiple: 10,
-    exitYear: 5,
-  },
-  dcf: {
-    discountRate: 0.15,
-    horizonYears: 5,
-    terminalGrowth: 0.03,
-  },
-};
 
 export default function ResultPage() {
   const router = useRouter();
@@ -91,9 +64,12 @@ export default function ResultPage() {
       mrr: data.mrr,
       growthRate: data.growthRate,
       teamSize: data.teamSize,
+      //methods, // istersen burada da saklayabilirsin
     };
 
-    const result = evaluateStartup(input, methods, defaultConfig);
+    // Score engine çağrısı – ayrı handleCalculate yok,
+    // sayfa yüklendiğinde (query hazır olunca) çalışıyor
+    const result = evaluateStartupWithDefaults(input, methods);
 
     setState({
       kind: "success",

@@ -27,6 +27,8 @@ export default function EvaluatePage() {
     mrr: '',
     growthRate: '',
     teamSize: '',
+    runwayMonths:'',
+    profitMargin:'',
   });
   const [statusMsg, setStatusMsg] = useState<StatusMsg>({ type: null, text: '' });
 

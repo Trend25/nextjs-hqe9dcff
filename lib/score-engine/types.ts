@@ -19,6 +19,10 @@ export interface BaseInput {
   mrr?: number;         // aylık tekrar eden gelir
   growthRate?: number;  // % cinsinden
   teamSize?: number;
+  //yeni alanlar
+  runwayMonths?: number;
+  profitMargin?: number; //%cinsinden
+
 }
 
 // Her yönteme ait konfigürasyon tipleri
@@ -65,6 +69,12 @@ export interface MethodResult {
   value: number;                           // TL / USD vs. (şu an birim sabit değil)
   breakdown?: Record<string, number>;      // alt kalemler (opsiyonel)
   notes?: string;                          // kullanıcıya gösterilecek açıklama
+}
+export interface EngineResult {
+  input: BaseInput;
+  methods: MethodResult[];
+  compositeValue: number | null;
+  currency?: string;
 }
 
 // Score engine’in toplam çıktısı

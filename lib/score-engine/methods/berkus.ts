@@ -2,10 +2,10 @@
 import {
   BaseInput,
   BerkusConfig,
-  MethodConfig,
   MethodResult,
   Stage,
 } from "../types";
+import { adjustForRunway } from "../runway";
 
 const STAGE_KEY_MAP: Record<Stage, keyof BerkusConfig> = {
   idea: "ideaMax",
@@ -16,23 +16,26 @@ const STAGE_KEY_MAP: Record<Stage, keyof BerkusConfig> = {
 
 export function berkusValuation(
   input: BaseInput,
-  config: MethodConfig,
+  berkus: BerkusConfig,
 ): MethodResult {
-  const berkus = config.berkus;
   const key = STAGE_KEY_MAP[input.stage];
   const max = berkus[key];
 
+  // çok basit bir "completeness" skoru (v0.6 UAT)
   const completeness =
     0.25 +
     (input.mrr ? 0.25 : 0) +
     (input.growthRate ? 0.25 : 0) +
     (input.teamSize ? 0.25 : 0);
 
-  const value = Math.round(max * completeness);
+  let value = max * completeness;
+
+  // 🚀 runway etkisini uygula
+  value = adjustForRunway(value, input);
 
   return {
     method: "berkus",
-    value,
-    notes: `Berkus metodu — ${input.stage} aşaması için tahmini değer.`,
+    value: Math.round(value),
+    notes: `Berkus metodu — ${input.stage} aşaması için tahmini değer (runway etkisi dahil).`,
   };
 }
