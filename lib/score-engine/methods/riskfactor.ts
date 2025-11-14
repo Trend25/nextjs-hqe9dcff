@@ -1,11 +1,11 @@
 // lib/score-engine/methods/riskfactor.ts
 import {
   BaseInput,
-  MethodConfig,
   MethodResult,
   RiskFactorConfig,
   Stage,
 } from "../types";
+import { adjustForRunway } from "../runway";
 
 const STAGE_RISK_SCORE: Record<Stage, number> = {
   idea: 8,
@@ -16,19 +16,27 @@ const STAGE_RISK_SCORE: Record<Stage, number> = {
 
 export function riskFactorValuation(
   input: BaseInput,
-  config: MethodConfig,
+  config: RiskFactorConfig,
 ): MethodResult {
-  const rf: RiskFactorConfig = config.riskfactor;
-  const base = rf.basePreMoney;
+  const base = config.basePreMoney;
   const riskScore = STAGE_RISK_SCORE[input.stage];
 
+  // Baz risk multiplier'ı
   const riskMultiplier = 1 - riskScore * 0.05;
-  const value = Math.round(base * Math.max(riskMultiplier, 0.1));
+  let value = base * Math.max(riskMultiplier, 0.1);
+
+  // Runway'i ayrıca risk katmanı gibi uygula:
+  // Burada runway etkisini biraz daha güçlü hissettirmek için
+  // helper çıktısını iki kez blend edebiliriz.
+  const firstPass = adjustForRunway(value, input);
+  const secondPass = adjustForRunway(firstPass, input);
+
+  value = secondPass;
 
   return {
     method: "riskfactor",
-    value,
+    value: Math.round(value),
     notes:
-      "Risk factor summation — toplam risk puanına göre indirgenmiş değer.",
+      "Risk factor summation — stage risk + runway risk’e göre indirgenmiş değer.",
   };
 }
