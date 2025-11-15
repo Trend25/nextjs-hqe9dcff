@@ -64,6 +64,8 @@ export default function ResultPage() {
       mrr: data.mrr,
       growthRate: data.growthRate,
       teamSize: data.teamSize,
+      runwayMonths: data.runwayMonths,
+      profitMargin: data.profitMargin,
       //methods, // istersen burada da saklayabilirsin
     };
 

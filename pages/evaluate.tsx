@@ -36,6 +36,7 @@ export default function EvaluatePage() {
 
   useEffect(() => {
     let mounted = true;
+
     loadLastDraft()
       .then((d) => {
         if (!mounted) return;
@@ -47,17 +48,27 @@ export default function EvaluatePage() {
         }
       })
       .catch(() => {
-        // ignore in mock
+        // UAT: sessizce yut
       });
+
     return () => {
       mounted = false;
     };
   }, []);
 
   const stages = ["idea", "mvp", "seed", "growth"];
-  const availableMethods = ["berkus", "scorecard", "riskfactor", "vcmethod", "dcf"];
+  const availableMethods = [
+    "berkus",
+    "scorecard",
+    "riskfactor",
+    "vcmethod",
+    "dcf",
+  ];
+
+  const clearStatus = () => setStatusMsg({ type: null, text: "" });
 
   const handleToggleMethod = (m: string) => {
+    // idea aşamasında vcmethod’u kilitle
     if (m === "vcmethod" && stage === "idea") {
       setStatusMsg({
         type: "error",
@@ -66,14 +77,15 @@ export default function EvaluatePage() {
       return;
     }
 
-    setStatusMsg({ type: null, text: "" });
+    clearStatus();
     setMethods((prev) =>
       prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]
     );
   };
 
   const handleSaveDraft = async () => {
-    setStatusMsg({ type: null, text: "" });
+    clearStatus();
+
     const payload = {
       stage,
       methods,
@@ -99,9 +111,36 @@ export default function EvaluatePage() {
   };
 
   const handleCalculate = () => {
-    const qs = `?stage=${encodeURIComponent(
-      stage
-    )}&methods=${encodeURIComponent(
+    clearStatus();
+
+    if (!stage) {
+      setStatusMsg({
+        type: "error",
+        text: "Lütfen önce aşama seçin.",
+      });
+      setStep(1);
+      return;
+    }
+
+    if (methods.length < 2) {
+      setStatusMsg({
+        type: "error",
+        text: "Lütfen en az iki değerleme yöntemi seçin.",
+      });
+      setStep(2);
+      return;
+    }
+
+    if (!formData.startupName || !formData.sector) {
+      setStatusMsg({
+        type: "error",
+        text: "Startup ismi ve sektör zorunludur.",
+      });
+      setStep(3);
+      return;
+    }
+
+    const qs = `?stage=${encodeURIComponent(stage)}&methods=${encodeURIComponent(
       methods.join(",")
     )}&startupName=${encodeURIComponent(
       formData.startupName
@@ -137,6 +176,7 @@ export default function EvaluatePage() {
           </div>
         )}
 
+        {/* STEP 1 – STAGE */}
         {step === 1 && (
           <div className="flex flex-col gap-3">
             <div className="text-sm text-gray-600">Aşama seçiniz</div>
@@ -148,7 +188,10 @@ export default function EvaluatePage() {
                     name="stage"
                     value={s}
                     checked={stage === s}
-                    onChange={() => setStage(s)}
+                    onChange={() => {
+                      clearStatus();
+                      setStage(s);
+                    }}
                   />
                   <span className="capitalize">{s}</span>
                 </label>
@@ -167,6 +210,7 @@ export default function EvaluatePage() {
           </div>
         )}
 
+        {/* STEP 2 – METHODS */}
         {step === 2 && (
           <div className="flex flex-col gap-3">
             <div className="text-sm text-gray-600">
@@ -199,13 +243,19 @@ export default function EvaluatePage() {
             <div className="flex justify-between gap-2">
               <button
                 className="rounded-md border border-gray-300 text-gray-700 bg-white px-4 py-2 text-sm font-medium"
-                onClick={() => setStep(1)}
+                onClick={() => {
+                  clearStatus();
+                  setStep(1);
+                }}
               >
                 Geri
               </button>
               <button
-                className="rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium"
-                onClick={() => setStep(3)}
+                className="rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium disabled:bg-gray-300"
+                onClick={() => {
+                  clearStatus();
+                  setStep(3);
+                }}
                 disabled={methods.length < 2}
               >
                 Devam
@@ -214,6 +264,7 @@ export default function EvaluatePage() {
           </div>
         )}
 
+        {/* STEP 3 – FORM DATA */}
         {step === 3 && (
           <div className="flex flex-col gap-3">
             <div className="text-sm text-gray-600">Form bilgileri</div>
@@ -319,7 +370,10 @@ export default function EvaluatePage() {
             <div className="flex justify-between gap-2">
               <button
                 className="rounded-md border border-gray-300 text-gray-700 bg-white px-4 py-2 text-sm font-medium"
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  clearStatus();
+                  setStep(2);
+                }}
               >
                 Geri
               </button>
@@ -334,10 +388,7 @@ export default function EvaluatePage() {
                 <button
                   className="rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium disabled:bg-gray-300"
                   onClick={handleCalculate}
-                  disabled={
-                    !formData.startupName ||
-                    !formData.sector
-                  }
+                  disabled={!formData.startupName || !formData.sector}
                 >
                   Hesapla
                 </button>
