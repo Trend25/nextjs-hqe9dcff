@@ -2,10 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { parseResultQuery } from "../lib/validation";
-import {
-  BaseInput,
-  ValuationMethod,
-} from "../lib/score-engine/types";
+import { BaseInput, ValuationMethod } from "../lib/score-engine/types";
 import { evaluateStartupWithDefaults } from "../lib/score-engine";
 
 type ViewState =
@@ -42,11 +39,13 @@ export default function ResultPage() {
       return;
     }
 
-    const data = parseRes.data;
+    // UAT: zod şemasında runway/profit henüz opsiyonel olarak tanımlı olmadığı için
+    // parseRes.data'yı geniş tipe cast ediyoruz.
+    const data = parseRes.data as any;
 
     // methods string → ValuationMethod[]
-    const methods = data.methods
-      .map((m) => m.trim())
+    const methods = (data.methods || [])
+      .map((m: string) => m.trim())
       .filter(Boolean) as ValuationMethod[];
 
     if (methods.length === 0) {
@@ -64,7 +63,9 @@ export default function ResultPage() {
       mrr: data.mrr,
       growthRate: data.growthRate,
       teamSize: data.teamSize,
-      //methods, // istersen burada da saklayabilirsin
+      runwayMonths: data.runwayMonths ?? undefined,
+      profitMargin: data.profitMargin ?? undefined,
+      // methods'i istersen burada da saklayabilirsin
     };
 
     // Score engine çağrısı – ayrı handleCalculate yok,
@@ -89,7 +90,9 @@ export default function ResultPage() {
   return (
     <div className="min-h-screen p-4 bg-gray-50 flex items-start justify-center">
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm max-w-xl w-full mx-auto flex flex-col gap-4">
-        <h1 className="text-lg font-semibold text-gray-900">Sonuç Özeti (UAT)</h1>
+        <h1 className="text-lg font-semibold text-gray-900">
+          Sonuç Özeti (UAT)
+        </h1>
 
         {state.kind === "loading" && (
           <div className="bg-blue-50 text-blue-800 border border-blue-200 rounded-md p-3 text-sm">
