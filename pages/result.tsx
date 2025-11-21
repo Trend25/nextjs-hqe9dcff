@@ -2,6 +2,11 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { parseResultQuery } from "../lib/validation";
+import {
+  BaseInput,
+  ValuationMethod,
+  BenchmarkInfo,
+} from "../lib/score-engine/types";
 import { BaseInput, ValuationMethod } from "../lib/score-engine/types";
 import { evaluateStartupWithDefaults } from "../lib/score-engine";
 
@@ -16,6 +21,7 @@ type ViewState =
         value: number;
       }[];
       input: BaseInput;
+      benchmark: BenchmarkInfo | null;
     };
 
 export default function ResultPage() {
@@ -80,6 +86,7 @@ export default function ResultPage() {
         value: m.value,
       })),
       input,
+      benchmark: result.benchmark ?? null,
     });
   }, [router.isReady, router.query]);
 
@@ -122,6 +129,7 @@ export default function ResultPage() {
 
         {state.kind === "success" && (
           <>
+            {/* Temel bilgiler */}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <div className="text-gray-500 text-xs">Startup</div>
@@ -161,11 +169,30 @@ export default function ResultPage() {
                     : "—"}
                 </div>
               </div>
+
+              {/* Yeni alanlar: runway & kâr marjı */}
+              <div>
+                <div className="text-gray-500 text-xs">Runway (ay)</div>
+                <div className="text-gray-900 font-medium">
+                  {state.input.runwayMonths != null
+                    ? state.input.runwayMonths
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-xs">Kâr Marjı (%)</div>
+                <div className="text-gray-900 font-medium">
+                  {state.input.profitMargin != null
+                    ? `${state.input.profitMargin}%`
+                    : "—"}
+                </div>
+              </div>
             </div>
 
+            {/* Bileşik değerleme */}
             <div className="mt-2 p-3 rounded-md bg-indigo-50 border border-indigo-200">
               <div className="text-xs text-indigo-700 mb-1">
-                Bileşik Tahmini Değerleme (v0.5 UAT, mock)
+                Bileşik Tahmini Değerleme (v0.7 UAT, mock)
               </div>
               <div className="text-lg font-semibold text-indigo-900">
                 {state.composite.toLocaleString("tr-TR", {
@@ -175,6 +202,21 @@ export default function ResultPage() {
               </div>
             </div>
 
+            {/* Sektör benchmark bilgisi (varsa) */}
+            {state.benchmark && (
+              <div className="mt-2 p-3 rounded-md bg-slate-50 border border-slate-200">
+                <div className="text-xs text-slate-600 mb-1">
+                  Sektör Benchmarkı
+                </div>
+                <div className="text-sm text-slate-800">
+                  {state.benchmark.multiplier}x çarpan –{" "}
+                  {state.benchmark.label} ({state.benchmark.sectorKey},{" "}
+                  {state.benchmark.stage} aşaması)
+                </div>
+              </div>
+            )}
+
+            {/* Yöntem bazında tahminler */}
             <div className="mt-2">
               <div className="text-xs text-gray-500 mb-1">
                 Yöntem Bazında Tahminler
@@ -199,6 +241,7 @@ export default function ResultPage() {
               </div>
             </div>
 
+            {/* Butonlar & dipnot */}
             <div className="flex justify-end mt-3">
               <button
                 className="rounded-md border border-gray-300 text-gray-700 bg-white px-4 py-2 text-sm font-medium"
@@ -209,8 +252,9 @@ export default function ResultPage() {
             </div>
 
             <div className="text-[10px] text-gray-400 mt-1">
-              UAT build: Score engine v0.5 (parametrik yapı, mock değerler). Bu
-              ekran production finansal tavsiye değildir.
+              UAT build: Score engine v0.7 (parametrik yapı, mock değerler +
+              sektör benchmark’ı). Bu ekran production finansal tavsiye
+              değildir.
             </div>
           </>
         )}
