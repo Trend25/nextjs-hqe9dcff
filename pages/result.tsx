@@ -1,12 +1,15 @@
 // pages/result.tsx
+// pages/result.tsx
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { parseResultQuery } from "../lib/validation";
+
 import {
   BaseInput,
   ValuationMethod,
   BenchmarkInfo,
 } from "../lib/score-engine/types";
+
 import { evaluateStartupWithDefaults } from "../lib/score-engine";
 
 type ViewState =
