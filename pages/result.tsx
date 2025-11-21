@@ -7,6 +7,7 @@ import {
   ValuationMethod,
   BenchmarkInfo,
 } from "../lib/score-engine/types";
+import { BaseInput, ValuationMethod } from "../lib/score-engine/types";
 import { evaluateStartupWithDefaults } from "../lib/score-engine";
 
 type ViewState =
@@ -70,6 +71,7 @@ export default function ResultPage() {
       teamSize: data.teamSize,
       runwayMonths: data.runwayMonths ?? undefined,
       profitMargin: data.profitMargin ?? undefined,
+      // methods'i istersen burada da saklayabilirsin
     };
 
     // Score engine çağrısı – ayrı handleCalculate yok,
