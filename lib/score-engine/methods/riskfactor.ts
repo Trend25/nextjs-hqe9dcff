@@ -5,7 +5,7 @@ import {
   RiskFactorConfig,
   Stage,
 } from "../types";
-import { adjustForRunway } from "../runway";
+import { applyRunwayAndProfitAdjustments } from "../adjustments";
 
 const STAGE_RISK_SCORE: Record<Stage, number> = {
   idea: 8,
@@ -21,22 +21,22 @@ export function riskFactorValuation(
   const base = config.basePreMoney;
   const riskScore = STAGE_RISK_SCORE[input.stage];
 
-  // Baz risk multiplier'ı
+  // Baz risk multiplier'ı (risk arttıkça değer düşüyor)
   const riskMultiplier = 1 - riskScore * 0.05;
   let value = base * Math.max(riskMultiplier, 0.1);
 
-  // Runway'i ayrıca risk katmanı gibi uygula:
-  // Burada runway etkisini biraz daha güçlü hissettirmek için
-  // helper çıktısını iki kez blend edebiliriz.
-  const firstPass = adjustForRunway(value, input);
-  const secondPass = adjustForRunway(firstPass, input);
-
-  value = secondPass;
+  // 🚀 Runway & kâr marjı etkisini merkezi helper üzerinden uygula.
+  // RiskFactor için runway etkisini biraz daha güçlü,
+  // kâr marjını ise daha düşük ağırlıkta veriyoruz.
+  value = applyRunwayAndProfitAdjustments(value, input, {
+    runwayWeight: 1.5,
+    profitWeight: 0.5,
+  });
 
   return {
     method: "riskfactor",
     value: Math.round(value),
     notes:
-      "Risk factor summation — stage risk + runway risk’e göre indirgenmiş değer.",
+      "Risk factor summation — stage risk + runway/kârlılık riskine göre ayarlanmış değer.",
   };
 }

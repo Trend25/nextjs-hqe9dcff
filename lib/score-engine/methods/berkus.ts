@@ -5,7 +5,7 @@ import {
   MethodResult,
   Stage,
 } from "../types";
-import { adjustForRunway } from "../runway";
+import { applyRunwayAndProfitAdjustments } from "../adjustments";
 
 const STAGE_KEY_MAP: Record<Stage, keyof BerkusConfig> = {
   idea: "ideaMax",
@@ -30,12 +30,12 @@ export function berkusValuation(
 
   let value = max * completeness;
 
-  // 🚀 runway etkisini uygula
-  value = adjustForRunway(value, input);
+  // ✅ Ortak runway + kâr marjı ayarlaması
+  value = applyRunwayAndProfitAdjustments(value, input);
 
   return {
     method: "berkus",
     value: Math.round(value),
-    notes: `Berkus metodu — ${input.stage} aşaması için tahmini değer (runway etkisi dahil).`,
+    notes: `Berkus metodu — ${input.stage} aşaması için tahmini değer (runway & kâr marjı etkisi dahil).`,
   };
 }
