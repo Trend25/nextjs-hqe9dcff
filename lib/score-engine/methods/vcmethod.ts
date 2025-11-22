@@ -3,51 +3,55 @@ import {
   BaseInput,
   MethodResult,
   VCMethodConfig,
-  Stage,
 } from "../types";
-import { adjustForRunway } from "../runway";
+import { applyRunwayAndProfitAdjustments } from "../adjustments";
 
-// Stage'e göre risk/iskonto katsayısı
-const STAGE_DISCOUNT: Record<Stage, number> = {
-  idea: 0.5,   // çok riskli
-  mvp: 0.6,
-  seed: 0.75,
-  growth: 0.9, // daha olgun
-};
-
+/**
+ * VC Method – çok basitleştirilmiş UAT versiyonu:
+ *
+ * 1. MRR → yıllık gelir (ARR) hesaplanır.
+ * 2. GrowthRate varsa exitYear'e kadar bileşik büyüme uygulanır.
+ * 3. Çıkan exit-year revenue, VC targetReturnMultiple ile çarpılır.
+ * 4. Son olarak runway + kâr marjı etkisi merkezi helper ile uygulanır.
+ */
 export function vcMethodValuation(
   input: BaseInput,
   config: VCMethodConfig,
 ): MethodResult {
-  // Yıllık gelir (MRR varsa)
-  const annualRevenue = (input.mrr ?? 0) * 12;
+  const mrr = input.mrr ?? 0;
+  const growth = input.growthRate ?? 0;
 
-  // Eğer MRR yoksa bile, çok düşük bir baz değer kullan
-  const baseRevenue = annualRevenue > 0 ? annualRevenue : 100_000;
+  // 1) MRR → ARR
+  let projectedRevenue = mrr * 12;
 
-  // Hedef exit değeri: yıllık gelir * targetReturnMultiple
-  let value = baseRevenue * config.targetReturnMultiple;
-
-  // Stage riskine göre iskonto
-  const stageDiscount = STAGE_DISCOUNT[input.stage] ?? 0.7;
-  value *= stageDiscount;
-
-  // Karlılığa göre küçük bir ayarlama
-  if (input.profitMargin != null && !Number.isNaN(input.profitMargin)) {
-    // -50% ile +50% aralığına sıkıştır
-    const clamped = Math.max(-50, Math.min(50, input.profitMargin));
-    // -0.25 ile +0.25 arası etki (yumuşak)
-    const marginFactor = 1 + clamped / 200;
-    value *= marginFactor;
+  // 2) growthRate (%) → yıllık bileşik büyüme (exitYear'e kadar)
+  if (projectedRevenue > 0 && growth !== null && growth !== undefined) {
+    // aşırı uçları kıs: -50% ile +150% arası
+    const clampedGrowth = Math.max(-50, Math.min(150, growth)) / 100;
+    const years = Math.max(1, config.exitYear || 5);
+    projectedRevenue *= Math.pow(1 + clampedGrowth, years);
   }
 
-  // 🔁 Runway etkisini uygula (nakit ömrü kısa ise aşağı çeker, uzunsa hafif yukarı çeker)
-  value = adjustForRunway(value, input);
+  // 3) exit-year revenue * targetReturnMultiple
+  let value = projectedRevenue * (config.targetReturnMultiple || 10);
+
+  // Eğer hiçbir veri yoksa baz bir minimum ver:
+  if (!mrr && !growth) {
+    // tamamen boş durumda kaba bir baseline
+    value = 1_000_000;
+  }
+
+  // 4) Runway + profit etkisi
+  // VC bakışında kâr marjı önemli, runway de anlamlı:
+  value = applyRunwayAndProfitAdjustments(value, input, {
+    runwayWeight: 1.0, // runway etkisi orta
+    profitWeight: 1.5, // kârlılık etkisi daha yüksek
+  });
 
   return {
     method: "vcmethod",
     value: Math.round(value),
     notes:
-      "VC metodu — MRR, hedef getiri katsayısı ve stage + runway riskine göre tahmini exit değeri.",
+      "VC method — MRR, büyüme ve çıkış yılı varsayımı üzerinden, runway ve kârlılık ile ayarlanmış tahmini exit değeri.",
   };
 }

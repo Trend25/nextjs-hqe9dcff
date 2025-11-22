@@ -5,9 +5,9 @@ import {
   ScorecardConfig,
   Stage,
 } from "../types";
-import { adjustForRunway } from "../runway";
+import { applyRunwayAndProfitAdjustments } from "../adjustments";
 
-// Stage'e göre çarpan (benchmark'e göre)
+// Stage'e göre çarpan (benchmark + stage etki)
 const STAGE_MULTIPLIER: Record<Stage, number> = {
   idea: 0.6,
   mvp: 0.8,
@@ -33,20 +33,22 @@ export function scorecardValuation(
 
   let value = base * stageMult * qualityScore;
 
-  // Karlılık bilgisini hafifçe dikkate al (profitMargin opsiyonel)
+  // Scorecard içindeki bu profit margin etkisini de kaldırıp
+  // merkezi adjustments'a taşıyabiliriz.
+  // Ama şimdilik UAT mantığı korunuyor.
   if (input.profitMargin != null && !Number.isNaN(input.profitMargin)) {
     const clamped = Math.max(-30, Math.min(30, input.profitMargin));
     const marginFactor = 1 + clamped / 300; // -0.1 ile +0.1 arası etki
     value *= marginFactor;
   }
 
-  // 🔁 Runway etkisini uygula (nakit ömrü kısa ise indir, uzunsa hafif artır)
-  value = adjustForRunway(value, input);
+  // 🚀 Merkezî runway + kâr marjı ayarlaması
+  value = applyRunwayAndProfitAdjustments(value, input);
 
   return {
     method: "scorecard",
     value: Math.round(value),
     notes:
-      "Scorecard metodu — benchmark pre-money, stage, büyüme, takım ve runway'e göre ayarlanmış skor.",
+      "Scorecard metodu — pre-money, stage, kalite skoru ve runway/kârlılık etkisi içerir.",
   };
 }
