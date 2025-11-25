@@ -1,4 +1,5 @@
 // lib/score-engine/index.ts
+
 import {
   BaseInput,
   MethodConfig,
@@ -11,11 +12,13 @@ import { scorecardValuation } from "./methods/scorecard";
 import { riskFactorValuation } from "./methods/riskfactor";
 import { vcMethodValuation } from "./methods/vcmethod";
 import { dcfValuation } from "./methods/dcf";
-import { defaultMethodConfig } from "./config";
+import { defaultConfig } from "./config";
+import { getSectorBenchmark } from "./benchmarks";
 
 /**
- * UAT v0.6: Stage + method + temel finansal verilere göre
- * basit bir bileşik değerleme hesaplar.
+ * Çekirdek engine:
+ * Verilen config + yöntem listesi ile değerleme yapar.
+ * Benchmark uygulamaz.
  */
 export function evaluateStartup(
   input: BaseInput,
@@ -48,16 +51,53 @@ export function evaluateStartup(
     methods: results,
     compositeValue: composite,
     currency: "TRY",
+    benchmark: null, // çekirdek engine'de benchmark uygulanmıyor
   };
 }
 
 /**
- * Convenience helper:
- * Config göndermeden, default UAT config ile çağırmak için.
+ * Default config + sektör benchmark'ı ile çalışan convenience wrapper.
+ * - defaultConfig kullanır
+ * - sektöre göre stage bazlı çarpan uygular
  */
 export function evaluateStartupWithDefaults(
   input: BaseInput,
   methods: ValuationMethod[],
 ): EngineResult {
-  return evaluateStartup(input, methods, defaultMethodConfig);
+  const baseResult = evaluateStartup(input, methods, defaultConfig);
+
+  const benchmark = getSectorBenchmark(input.stage, input.sector);
+  if (!benchmark) {
+    // Benchmark yoksa olduğu gibi döndür
+    return baseResult;
+  }
+
+  const stageMultiplier =
+    benchmark.stageMultipliers[input.stage] ?? 1.0;
+
+  // Çarpan 1 ise sadece benchmark bilgisini ekleyip geri dön
+  if (stageMultiplier === 1) {
+    return {
+      ...baseResult,
+      benchmark,
+    };
+  }
+
+  // Composite + method değerlerine çarpan uygula
+  const adjustedComposite =
+    baseResult.compositeValue != null
+      ? baseResult.compositeValue * stageMultiplier
+      : baseResult.compositeValue;
+
+  const adjustedMethods = baseResult.methods.map((m) => ({
+    ...m,
+    value: Math.round(m.value * stageMultiplier),
+  }));
+
+  return {
+    ...baseResult,
+    compositeValue: adjustedComposite,
+    methods: adjustedMethods,
+    benchmark,
+  };
 }
