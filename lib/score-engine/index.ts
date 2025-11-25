@@ -1,6 +1,4 @@
 // lib/score-engine/index.ts
-//
-// Score engine çekirdeği + default config + YC benchmark entegrasyonu
 
 import {
   BaseInput,
@@ -9,23 +7,18 @@ import {
   ValuationMethod,
   EngineResult,
 } from "./types";
-
 import { berkusValuation } from "./methods/berkus";
 import { scorecardValuation } from "./methods/scorecard";
 import { riskFactorValuation } from "./methods/riskfactor";
 import { vcMethodValuation } from "./methods/vcmethod";
 import { dcfValuation } from "./methods/dcf";
-
 import { defaultConfig } from "./config";
-
-// NEW YC benchmark system
-import { computeBenchmarkMultiplier } from "./benchmark-generator";
-
-// Legacy baseline benchmark (fallback)
 import { getSectorBenchmark } from "./benchmarks";
 
 /**
- * Çekirdek engine — benchmark uygulanmadan çalışan versiyon.
+ * Çekirdek engine:
+ * Verilen config + yöntem listesi ile değerleme yapar.
+ * Benchmark uygulamaz.
  */
 export function evaluateStartup(
   input: BaseInput,
@@ -58,81 +51,53 @@ export function evaluateStartup(
     methods: results,
     compositeValue: composite,
     currency: "TRY",
-    benchmark: null,
+    benchmark: null, // çekirdek engine'de benchmark uygulanmıyor
   };
 }
 
 /**
- * Default config + YC benchmark + fallback baseline benchmark.
- * 
- * Öncelik sırası:
- * 1. YC sektörü bulunursa → YC multiplier uygulanır.
- * 2. YC yok ama basit sektör benchmark’ı varsa → eski çarpan uygulanır.
- * 3. Hiçbiri yok → benchmark uygulanmaz.
+ * Default config + sektör benchmark'ı ile çalışan convenience wrapper.
+ * - defaultConfig kullanır
+ * - sektöre göre stage bazlı çarpan uygular
  */
 export function evaluateStartupWithDefaults(
   input: BaseInput,
   methods: ValuationMethod[],
 ): EngineResult {
-  const base = evaluateStartup(input, methods, defaultConfig);
+  const baseResult = evaluateStartup(input, methods, defaultConfig);
 
-  // 1) YC benchmark multiplier hesapla
-  const yc = computeBenchmarkMultiplier(input.stage, input.sector);
-
-  if (yc.sectorKey !== null) {
-    // YC sektörü bulundu → YC multiplier uygulanır
-    const mult = yc.multiplier;
-
-    const adjustedComposite =
-      base.compositeValue != null
-        ? base.compositeValue * mult
-        : base.compositeValue;
-
-    const adjustedMethods = base.methods.map((m) => ({
-      ...m,
-      value: Math.round(m.value * mult),
-    }));
-
-    return {
-      ...base,
-      compositeValue: adjustedComposite,
-      methods: adjustedMethods,
-      benchmark: {
-        sectorKey: yc.sectorKey,
-        label: yc.sectorLabel || "",
-        multiplier: yc.multiplier,
-        stage: input.stage,
-      },
-    };
+  const benchmark = getSectorBenchmark(input.stage, input.sector);
+  if (!benchmark) {
+    // Benchmark yoksa olduğu gibi döndür
+    return baseResult;
   }
 
-  // 2) YC benchmark yoksa → Legacy baseline benchmark’a fallback
-  const legacy = getSectorBenchmark(input.stage, input.sector);
-  if (!legacy) return base;
+  const stageMultiplier =
+    benchmark.stageMultipliers[input.stage] ?? 1.0;
 
-  const stageMultiplier = legacy.stageMultipliers[input.stage] ?? 1.0;
-
+  // Çarpan 1 ise sadece benchmark bilgisini ekleyip geri dön
   if (stageMultiplier === 1) {
     return {
-      ...base,
-      benchmark: legacy,
+      ...baseResult,
+      benchmark,
     };
   }
 
+  // Composite + method değerlerine çarpan uygula
   const adjustedComposite =
-    base.compositeValue != null
-      ? base.compositeValue * stageMultiplier
-      : base.compositeValue;
+    baseResult.compositeValue != null
+      ? baseResult.compositeValue * stageMultiplier
+      : baseResult.compositeValue;
 
-  const adjustedMethods = base.methods.map((m) => ({
+  const adjustedMethods = baseResult.methods.map((m) => ({
     ...m,
     value: Math.round(m.value * stageMultiplier),
   }));
 
   return {
-    ...base,
+    ...baseResult,
     compositeValue: adjustedComposite,
     methods: adjustedMethods,
-    benchmark: legacy,
+    benchmark,
   };
 }
